@@ -8,6 +8,7 @@ import HomeScreen from '../screens/HomeScreen';
 import PlaceholderScreen from '../screens/PlaceholderScreen';
 import { colors, fonts } from '../theme';
 import EventsStack from './EventsStack';
+import GuestsStack from './GuestsStack';
 import RequirementsStack from './RequirementsStack';
 
 const Tab = createBottomTabNavigator();
@@ -21,7 +22,7 @@ const theme = {
 const TABS: { name: string; label: string; icon: IconName; component: ComponentType }[] = [
   { name: 'Home', label: 'Home', icon: 'home', component: HomeScreen },
   { name: 'Events', label: 'Events', icon: 'calendar', component: EventsStack },
-  { name: 'Guests', label: 'Guests', icon: 'guests', component: PlaceholderScreen },
+  { name: 'Guests', label: 'Guests', icon: 'guests', component: GuestsStack },
   { name: 'Shopping', label: 'Shopping', icon: 'bag', component: PlaceholderScreen },
   { name: 'Todo', label: 'To-do', icon: 'check', component: PlaceholderScreen },
 ];
