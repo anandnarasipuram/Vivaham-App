@@ -36,7 +36,7 @@ Not tested automatically: anything after logging in (Home, the modules, photo up
 | Delete confirmations appear (no silent Alert) | ✔ in code. The app never used `Alert`; all deletes use the in-app confirm popup, which works in browsers |
 | Settings > invite: WhatsApp opens with link + code; Copy link works | ☐ Phone after deploy. Needs `EXPO_PUBLIC_APP_URL` set before the build, otherwise the old code-only message is used and the button reads "Copy code" |
 | Opening `/join/<code>` on a fresh browser leads to sign-up, then joins with the right role | ✔ up to sign-up (tested). Joining itself needs a real code |
-| Refresh on any deep link does not 404 | ✔ (`/join/…`, `/events/…`, `/settings`; Netlify uses `public/_redirects`) |
+| Refresh on any deep link does not 404 | ✔ (`/join/…`, `/events/…`, `/settings`; Cloudflare Pages honours `public/_redirects`) |
 | Contact import shows the web note, no crash | ✔ in code. Guests shows the note instead of the button; the import screen shows it too |
 | Vehicle share by WhatsApp works | ☐ Phone after deploy. Uses `https://wa.me/?text=…` |
 
@@ -57,5 +57,5 @@ Not tested automatically: anything after logging in (Home, the modules, photo up
 - Contacts import is phone-app only. Camera capture on web is limited to what the browser's file chooser offers.
 - iPhone: installing needs Safari "Add to Home Screen" (Chrome on recent iOS also works).
 - No push notifications. No service worker (no offline mode), on purpose.
-- Netlify's free tier is plenty for this use.
+- Cloudflare Pages' free tier is plenty for this use.
 - Wide screens: popups (confirmations, pickers) still cover the whole browser window rather than only the 480px column.
