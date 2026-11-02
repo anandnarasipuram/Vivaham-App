@@ -10,6 +10,8 @@ import {
   PlusJakartaSans_700Bold,
   PlusJakartaSans_800ExtraBold,
 } from '@expo-google-fonts/plus-jakarta-sans';
+import Screen from './src/components/Screen';
+import { Note } from './src/components/ui';
 import { linkParams } from './src/lib/links';
 import { supabase } from './src/lib/supabase';
 import { useWedding, WeddingProvider } from './src/lib/wedding';
@@ -23,7 +25,11 @@ import SetPasswordScreen from './src/screens/SetPasswordScreen';
 function Main() {
   const { wedding, loading, error } = useWedding();
   if (loading) {
-    return null;
+    return (
+      <Screen>
+        <Note>Loading your wedding…</Note>
+      </Screen>
+    );
   }
   if (!wedding && !error) {
     return <OnboardingScreen />;

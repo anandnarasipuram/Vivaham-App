@@ -51,6 +51,8 @@ export default function EventPhotos({ eventId }: { eventId: string }) {
 
   async function pick(source: 'gallery' | 'camera') {
     setActionError('');
+    setChoosing(false);
+    await new Promise((resolve) => setTimeout(resolve, 400));
     const permission =
       source === 'camera'
         ? await ImagePicker.requestCameraPermissionsAsync()
@@ -71,7 +73,6 @@ export default function EventPhotos({ eventId }: { eventId: string }) {
     if (result.canceled || result.assets.length === 0) {
       return;
     }
-    setChoosing(false);
     await upload(result.assets.map((asset) => asset.uri));
   }
 

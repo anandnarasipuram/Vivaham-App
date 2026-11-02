@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Contact, ContactField, requestPermissionsAsync } from 'expo-contacts';
 import BackPill from '../components/BackPill';
 import { PrimaryButton, SecondaryButton } from '../components/Buttons';
@@ -42,12 +42,14 @@ export default function ImportContactsScreen() {
   const [importing, setImporting] = useState('');
   const [result, setResult] = useState('');
   const [error, setError] = useState('');
+  const [denied, setDenied] = useState(false);
 
   useEffect(() => {
     async function load() {
       const permission = await requestPermissionsAsync();
       if (!permission.granted) {
         setError('Vivaham needs access to your contacts to import them. You can allow it in your phone settings.');
+        setDenied(true);
         setPeople([]);
         return;
       }
@@ -139,6 +141,7 @@ export default function ImportContactsScreen() {
             )
             .select('id')
         );
+        const undo = () => supabase.from('guests').delete().in('id', inserted.map((guest) => guest.id));
         await run(
           supabase.from('guest_events').insert(
             inserted.flatMap((guest) =>
@@ -151,7 +154,10 @@ export default function ImportContactsScreen() {
               }))
             )
           )
-        );
+        ).catch(async (inviteError) => {
+          await undo();
+          throw inviteError;
+        });
         added += inserted.length;
       }
       setResult(`Added ${plural(added, 'guest', 'guests')}.`);
@@ -184,6 +190,7 @@ export default function ImportContactsScreen() {
         <Lead>Tick the people to add. People already on your guest list are marked and left unticked.</Lead>
       </View>
       <ErrorText>{error}</ErrorText>
+      {denied ? <SecondaryButton label="Open Settings" onPress={() => Linking.openSettings()} /> : null}
       {result ? <Text style={styles.result}>{result}</Text> : null}
       {people === null && !error ? <Note>Reading your contacts…</Note> : null}
       {people && people.length > 0 ? (

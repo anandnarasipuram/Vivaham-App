@@ -70,12 +70,14 @@ export default function StaysScreen() {
 
   async function act(action: () => Promise<void>) {
     setActionError('');
+    setBusy(true);
     try {
       await action();
       await reload();
     } catch (failure) {
       setActionError(errorText(failure));
     }
+    setBusy(false);
   }
 
   function openShare(stay: Stay) {
@@ -223,6 +225,7 @@ export default function StaysScreen() {
                   compact
                   name={`rooms at ${stay.name}`}
                   value={stay.rooms ?? 0}
+                  disabled={busy}
                   onChange={(rooms) => act(() => run(supabase.from('accommodations').update({ rooms }).eq('id', stay.id)))}
                 />
               ) : (

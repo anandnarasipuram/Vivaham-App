@@ -298,16 +298,17 @@ export default function SendMessagesScreen() {
               <Text style={styles.name}>{item.guest.name}</Text>
               <Text style={[styles.small, !item.guest.phone && styles.noPhone]}>{item.guest.phone || 'no phone'}</Text>
             </View>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`Send WhatsApp to ${item.guest.name}`}
-              disabled={!item.guest.phone}
-              style={[styles.whatsapp, !item.guest.phone && styles.disabled]}
-              onPress={() => send(item)}
-            >
-              <Icon name="chat" color={colors.white} size={16} />
-              <Text style={styles.whatsappText}>WhatsApp</Text>
-            </Pressable>
+            {item.guest.phone ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Send WhatsApp to ${item.guest.name}`}
+                style={styles.whatsapp}
+                onPress={() => send(item)}
+              >
+                <Icon name="chat" color={colors.white} size={16} />
+                <Text style={styles.whatsappText}>WhatsApp</Text>
+              </Pressable>
+            ) : null}
             <View style={styles.sent}>
               <TickBox
                 checked={isSent(item)}
@@ -357,7 +358,6 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     backgroundColor: colors.whatsapp,
   },
-  disabled: { opacity: 0.4 },
   whatsappText: { fontFamily: fonts.bold, fontSize: 14, color: colors.white },
   sent: { alignItems: 'center', marginLeft: 4 },
   sentLabel: { fontFamily: fonts.semibold, fontSize: 11, color: colors.muted, marginTop: -8 },
