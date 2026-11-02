@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Share, StyleSheet, Text, View } from 'react-native';
+import { Platform, Share, StyleSheet, Text, View } from 'react-native';
 import AccessEditor from '../components/AccessEditor';
 import { AddButton, IconButton, PrimaryButton, SecondaryButton } from '../components/Buttons';
 import Calendar from '../components/Calendar';
@@ -321,7 +321,9 @@ export default function SettingsScreen() {
                   label="Share on WhatsApp"
                   onPress={() => openWhatsApp(joinMessage).catch((failure) => setActionError(errorText(failure)))}
                 />
-                <SecondaryButton label="Share another way" onPress={() => Share.share({ message: joinMessage })} />
+                {Platform.OS !== 'web' ? (
+                  <SecondaryButton label="Share another way" onPress={() => Share.share({ message: joinMessage })} />
+                ) : null}
               </View>
             ) : null}
           </Card>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { errorText, rows, run, useFocusData } from '../lib/data';
 import { plural } from '../lib/format';
@@ -52,6 +52,18 @@ export default function EventPhotos({ eventId }: { eventId: string }) {
   async function pick(source: 'gallery' | 'camera') {
     setActionError('');
     setChoosing(false);
+    if (Platform.OS === 'web') {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        quality: 0.6,
+        allowsMultipleSelection: true,
+        selectionLimit: 20,
+      });
+      if (!result.canceled && result.assets.length > 0) {
+        await upload(result.assets.map((asset) => asset.uri));
+      }
+      return;
+    }
     await new Promise((resolve) => setTimeout(resolve, 400));
     const permission =
       source === 'camera'
@@ -192,7 +204,9 @@ export default function EventPhotos({ eventId }: { eventId: string }) {
           onChangeText={setCaption}
         />
         <PrimaryButton size="medium" label="Choose from gallery" onPress={() => pick('gallery')} />
-        <PrimaryButton size="medium" label="Take a photo" onPress={() => pick('camera')} />
+        {Platform.OS !== 'web' ? (
+          <PrimaryButton size="medium" label="Take a photo" onPress={() => pick('camera')} />
+        ) : null}
         <SecondaryButton label="Cancel" onPress={() => setChoosing(false)} />
       </Dialog>
 

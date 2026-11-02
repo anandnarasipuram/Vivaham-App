@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import BackPill from '../components/BackPill';
 import { PrimaryButton, SecondaryButton } from '../components/Buttons';
 import { ChipGroup } from '../components/Chips';
@@ -187,7 +187,11 @@ export default function GuestsListScreen() {
                 label="+ Add a guest"
                 onPress={() => navigation.navigate('AddGuest', { eventId: selected?.id })}
               />
-              <SecondaryButton label="Import from contacts" onPress={() => navigation.navigate('ImportContacts')} />
+              {Platform.OS === 'web' ? (
+                <Note>Contact import works in the phone app. Add guests manually or paste a list.</Note>
+              ) : (
+                <SecondaryButton label="Import from contacts" onPress={() => navigation.navigate('ImportContacts')} />
+              )}
             </View>
           ) : undefined
         }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Linking } from 'react-native';
+import { Linking, StyleSheet, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import type { Session } from '@supabase/supabase-js';
@@ -21,6 +21,7 @@ import JoinScreen from './src/screens/JoinScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import OnboardingScreen from './src/screens/OnboardingScreen';
 import SetPasswordScreen from './src/screens/SetPasswordScreen';
+import { colors } from './src/theme';
 
 function Main() {
   const { wedding, loading, error } = useWedding();
@@ -142,7 +143,14 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <StatusBar style="light" />
-      {content}
+      <View style={styles.page}>
+        <View style={styles.column}>{content}</View>
+      </View>
     </SafeAreaProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  page: { flex: 1, backgroundColor: colors.cream, alignItems: 'center' },
+  column: { flex: 1, width: '100%', maxWidth: 480 },
+});

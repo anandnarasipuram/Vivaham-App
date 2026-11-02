@@ -114,6 +114,7 @@ export default function StaysScreen() {
     setBusy(true);
     setActionError('');
     try {
+      await Linking.openURL(`https://wa.me/?text=${encodeURIComponent(message)}`);
       if (canEdit && (contactName.trim() !== (stay.contact_name ?? '') || contactPhone.trim() !== (stay.contact_phone ?? ''))) {
         await run(
           supabase
@@ -122,7 +123,6 @@ export default function StaysScreen() {
             .eq('id', stay.id)
         );
       }
-      await Linking.openURL(`https://wa.me/?text=${encodeURIComponent(message)}`);
       setSharing(null);
       await reload();
     } catch (failure) {

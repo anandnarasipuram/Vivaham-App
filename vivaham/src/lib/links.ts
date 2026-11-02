@@ -1,6 +1,9 @@
-import { Linking } from 'react-native';
+import { Linking, Platform } from 'react-native';
 
 export async function resetRedirectUrl() {
+  if (Platform.OS === 'web') {
+    return `${window.location.origin}/reset-password`;
+  }
   const initial = await Linking.getInitialURL();
   if (initial && initial.startsWith('exp')) {
     const base = initial.split('#')[0].split('?')[0].split('/--/')[0];

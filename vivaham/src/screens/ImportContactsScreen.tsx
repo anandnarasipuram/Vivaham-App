@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { FlatList, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Contact, ContactField, requestPermissionsAsync } from 'expo-contacts';
 import BackPill from '../components/BackPill';
 import { PrimaryButton, SecondaryButton } from '../components/Buttons';
@@ -45,6 +45,11 @@ export default function ImportContactsScreen() {
   const [denied, setDenied] = useState(false);
 
   useEffect(() => {
+    if (Platform.OS === 'web') {
+      setError('Contact import works in the phone app. Add guests manually or paste a list.');
+      setPeople([]);
+      return;
+    }
     async function load() {
       const permission = await requestPermissionsAsync();
       if (!permission.granted) {
