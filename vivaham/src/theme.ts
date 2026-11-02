@@ -7,8 +7,16 @@ export const colors = {
   goldDark: '#8A6A1E',
   goldLight: '#F1DDB0',
   border: '#D9C9AC',
+  tileBorder: '#E9DCC4',
   placeholder: '#A89A8C',
   white: '#FFFFFF',
+  green: '#2F5D3A',
+  goldInk: '#6E5208',
+  brownInk: '#4F4036',
+  tintGold: '#F8ECCB',
+  tintGreen: '#E4EDE0',
+  tintRose: '#F7E4E1',
+  tintSand: '#F1E7D6',
 };
 
 export const fonts = {
@@ -16,4 +24,5 @@ export const fonts = {
   medium: 'PlusJakartaSans_500Medium',
   semibold: 'PlusJakartaSans_600SemiBold',
   bold: 'PlusJakartaSans_700Bold',
+  extrabold: 'PlusJakartaSans_800ExtraBold',
 };
