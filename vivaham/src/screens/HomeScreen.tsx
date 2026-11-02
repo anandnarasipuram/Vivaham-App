@@ -216,10 +216,10 @@ export default function HomeScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>What do you want to do?</Text>
           <View style={styles.grid}>
-            {tiles.map((tile) => (
+            {tiles.map((tile, index) => (
               <Pressable
                 key={tile.module}
-                style={styles.tile}
+                style={[styles.tile, tiles.length % 2 === 1 && index === tiles.length - 1 && styles.tileWide]}
                 onPress={() => navigation.navigate(tile.route)}
               >
                 <View style={[styles.tileIcon, { backgroundColor: tile.tint }]}>
@@ -285,6 +285,7 @@ const styles = StyleSheet.create({
   section: { gap: 10 },
   sectionTitle: { fontFamily: fonts.bold, fontSize: 19, color: colors.ink },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  tileWide: { flexBasis: '100%' },
   tile: {
     flexBasis: '47%',
     flexGrow: 1,
