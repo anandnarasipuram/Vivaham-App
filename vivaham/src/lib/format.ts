@@ -83,13 +83,15 @@ export function initial(name: string) {
 }
 
 export function rupees(amount: number) {
-  const digits = Math.round(amount).toString();
+  const rounded = Number.isFinite(amount) ? Math.round(amount) : 0;
+  const sign = rounded < 0 ? '-' : '';
+  const digits = Math.abs(rounded).toString();
   if (digits.length <= 3) {
-    return `₹${digits}`;
+    return `${sign}₹${digits}`;
   }
   const lastThree = digits.slice(-3);
   const rest = digits.slice(0, -3).replace(/\B(?=(\d{2})+(?!\d))/g, ',');
-  return `₹${rest},${lastThree}`;
+  return `${sign}₹${rest},${lastThree}`;
 }
 
 export function parseAmount(text: string) {
@@ -100,4 +102,25 @@ export function parseAmount(text: string) {
 export function weddingTag(name: string) {
   const base = name.replace(/[’']s wedding$/i, '').trim();
   return `ॐ · ${base ? `${base.toUpperCase()}’S ` : ''}VIVAHAM`;
+}
+
+export function countdown(iso: string, now: Date = new Date()) {
+  const today = new Date(now);
+  today.setHours(0, 0, 0, 0);
+  const days = Math.round((parseDate(iso).getTime() - today.getTime()) / 86400000);
+  if (days > 1) {
+    return { value: String(days), caption: 'days to go' };
+  }
+  if (days === 1) {
+    return { value: '1', caption: 'day to go' };
+  }
+  if (days === 0) {
+    return { value: '0', caption: 'Today is the big day!' };
+  }
+  return { value: String(Math.abs(days)), caption: 'days since the wedding' };
+}
+
+export function toDbTime(hour12: number, minute: number, pm: boolean) {
+  const hours = (hour12 % 12) + (pm ? 12 : 0);
+  return `${String(hours).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00`;
 }

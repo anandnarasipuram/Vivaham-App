@@ -59,3 +59,13 @@ export function levelOf(modules: Record<string, string> | null, module: string):
   const value = modules?.[module];
   return value === 'edit' || value === 'view' ? value : 'none';
 }
+
+export function accessFor(role: string | undefined, modules: Record<string, string> | null, module: string): Level {
+  if (!role) {
+    return 'none';
+  }
+  if (role === 'admin') {
+    return 'edit';
+  }
+  return levelOf(modules, module);
+}

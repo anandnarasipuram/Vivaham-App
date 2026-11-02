@@ -1,5 +1,5 @@
 import { rows } from './data';
-import { dayDate, timeLabel } from './format';
+import { dayDate, daysBetween, timeLabel } from './format';
 import { supabase } from './supabase';
 
 export type GuestOption = { id: string; name: string; people: number };
@@ -28,4 +28,8 @@ export function stayWhen(date: string | null, time: string | null) {
     return 'Not set';
   }
   return [dayDate(date), timeLabel(time)].filter(Boolean).join(' · ');
+}
+
+export function stayNights(checkin: string | null, checkout: string | null) {
+  return checkin && checkout ? Math.max(0, daysBetween(checkin, checkout)) : 0;
 }

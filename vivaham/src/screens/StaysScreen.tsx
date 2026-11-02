@@ -8,8 +8,8 @@ import SelectRow from '../components/SelectRow';
 import Stepper from '../components/Stepper';
 import { Avatar, Badge, Card, EmptyBox, ErrorText, Note, Title } from '../components/ui';
 import { errorText, rows, run, useFocusData } from '../lib/data';
-import { dayDate, daysBetween, initial, plural } from '../lib/format';
-import { fetchGuestOptions, GuestOption, mapsLink, stayWhen } from '../lib/stays';
+import { dayDate, initial, plural } from '../lib/format';
+import { fetchGuestOptions, GuestOption, mapsLink, stayNights, stayWhen } from '../lib/stays';
 import { supabase } from '../lib/supabase';
 import { useWedding } from '../lib/wedding';
 import { goHome, useNav } from '../navigation/nav';
@@ -32,7 +32,7 @@ type Stay = {
 type Placement = { id: string; accommodation_id: string; guest_id: string; people: number | null };
 
 function nights(stay: Stay) {
-  return stay.checkin_date && stay.checkout_date ? Math.max(0, daysBetween(stay.checkin_date, stay.checkout_date)) : 0;
+  return stayNights(stay.checkin_date, stay.checkout_date);
 }
 
 export default function StaysScreen() {

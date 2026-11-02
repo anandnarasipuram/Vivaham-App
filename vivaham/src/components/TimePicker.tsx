@@ -1,15 +1,11 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { toDbTime as compose } from '../lib/format';
 import { colors, fonts } from '../theme';
 import Stepper from './Stepper';
 
 type Props = { value: string; onChange: (time: string) => void };
 
 const MINUTES = [0, 15, 30, 45];
-
-function compose(hour12: number, minute: number, pm: boolean) {
-  const hours = (hour12 % 12) + (pm ? 12 : 0);
-  return `${String(hours).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00`;
-}
 
 export default function TimePicker({ value, onChange }: Props) {
   const [hours, minute] = value.split(':').map(Number);

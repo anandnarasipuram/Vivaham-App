@@ -1,4 +1,5 @@
 import { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react';
+import { accessFor } from './roles';
 import { supabase } from './supabase';
 
 export type Access = 'none' | 'view' | 'edit';
@@ -75,14 +76,7 @@ export function WeddingProvider({ children }: { children: ReactNode }) {
 
   const access = useCallback(
     (module: string): Access => {
-      if (!wedding) {
-        return 'none';
-      }
-      if (wedding.role === 'admin') {
-        return 'edit';
-      }
-      const value = wedding.modules[module];
-      return value === 'edit' || value === 'view' ? value : 'none';
+      return wedding ? accessFor(wedding.role, wedding.modules, module) : 'none';
     },
     [wedding]
   );

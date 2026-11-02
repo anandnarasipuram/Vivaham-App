@@ -4,6 +4,7 @@ import { PrimaryButton } from '../components/Buttons';
 import Screen from '../components/Screen';
 import { Badge, Card, EmptyBox, ErrorText, Note, ProgressBar, rowStyles, Title } from '../components/ui';
 import { errorText, EventRow, fetchEvents, rows, run, useFocusData } from '../lib/data';
+import { budgetTotals, expenseStatus } from '../lib/budget';
 import { parseAmount, rupees } from '../lib/format';
 import { supabase } from '../lib/supabase';
 import { useWedding } from '../lib/wedding';
@@ -20,18 +21,6 @@ type Expense = {
   paid_by: string | null;
 };
 type Purchase = { event_id: string | null; price: number; status: string };
-
-function status(expense: Expense) {
-  const amount = Number(expense.amount ?? 0);
-  const paid = Number(expense.paid ?? 0);
-  if (paid <= 0) {
-    return { label: 'Quoted', tone: 'gold' as const };
-  }
-  if (paid < amount) {
-    return { label: `Advance paid ${rupees(paid)}`, tone: 'rose' as const };
-  }
-  return { label: 'Settled', tone: 'green' as const };
-}
 
 export default function BudgetScreen() {
   const navigation = useNav();
@@ -92,12 +81,8 @@ export default function BudgetScreen() {
   const expenses = data?.expenses ?? [];
   const purchases = data?.purchases ?? [];
   const sum = (list: number[]) => list.reduce((total, value) => total + value, 0);
-  const committed = sum(expenses.map((row) => Number(row.amount ?? 0))) + sum(purchases.map((row) => Number(row.price ?? 0)));
-  const paid =
-    sum(expenses.map((row) => Number(row.paid ?? 0))) +
-    sum(purchases.filter((row) => row.status === 'bought').map((row) => Number(row.price ?? 0)));
   const limit = wedding?.budgetLimit ?? null;
-  const ratio = limit ? committed / limit : 0;
+  const { committed, paid, ratio } = budgetTotals(expenses, purchases, limit);
 
   const byEvent = [
     {
@@ -238,7 +223,7 @@ export default function BudgetScreen() {
         {expenses.length > 0 ? (
           <Card>
             {expenses.map((row, index) => {
-              const state = status(row);
+              const state = expenseStatus(row);
               return (
                 <View key={row.id} style={[rowStyles.row, styles.expense, index < expenses.length - 1 && rowStyles.divider]}>
                   <View style={rowStyles.grow}>

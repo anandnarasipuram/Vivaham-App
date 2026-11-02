@@ -3,7 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon, { IconName } from '../components/Icon';
-import { weddingTag } from '../lib/format';
+import { countdown, rupees, weddingTag } from '../lib/format';
 import { supabase } from '../lib/supabase';
 import { useWedding } from '../lib/wedding';
 import { colors, fonts } from '../theme';
@@ -42,32 +42,6 @@ function parseDate(iso: string) {
 function dateLabel(iso: string) {
   const date = parseDate(iso);
   return `${DAYS[date.getDay()]}, ${date.getDate()} ${MONTHS[date.getMonth()]} ${date.getFullYear()}`;
-}
-
-function countdown(iso: string) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const days = Math.round((parseDate(iso).getTime() - today.getTime()) / 86400000);
-  if (days > 1) {
-    return { value: String(days), caption: 'days to go' };
-  }
-  if (days === 1) {
-    return { value: '1', caption: 'day to go' };
-  }
-  if (days === 0) {
-    return { value: '0', caption: 'Today is the big day!' };
-  }
-  return { value: String(Math.abs(days)), caption: 'days since the wedding' };
-}
-
-function rupees(amount: number) {
-  const digits = Math.round(amount).toString();
-  if (digits.length <= 3) {
-    return `₹${digits}`;
-  }
-  const lastThree = digits.slice(-3);
-  const rest = digits.slice(0, -3).replace(/\B(?=(\d{2})+(?!\d))/g, ',');
-  return `₹${rest},${lastThree}`;
 }
 
 async function loadSummary(can: (module: string) => boolean): Promise<Summary> {
