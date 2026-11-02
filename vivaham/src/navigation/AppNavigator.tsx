@@ -5,6 +5,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Icon, { IconName } from '../components/Icon';
 import HomeScreen from '../screens/HomeScreen';
+import SettingsScreen from '../screens/SettingsScreen';
 import { colors, fonts } from '../theme';
 import BudgetStack from './BudgetStack';
 import EventsStack from './EventsStack';
@@ -38,6 +39,7 @@ const EXTRA_SCREENS: { name: string; component: ComponentType }[] = [
   { name: 'Food', component: FoodStack },
   { name: 'Stays', component: StaysStack },
   { name: 'Transport', component: TransportStack },
+  { name: 'Settings', component: SettingsScreen },
 ];
 
 function Tabs() {

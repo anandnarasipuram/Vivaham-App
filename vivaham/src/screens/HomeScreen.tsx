@@ -179,9 +179,19 @@ export default function HomeScreen() {
     <View style={styles.screen}>
       {strip}
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.titleBlock}>
-          <Text style={styles.tag}>{weddingTag(wedding.name)}</Text>
-          <Text style={styles.title}>{wedding.name}</Text>
+        <View style={styles.titleRow}>
+          <View style={styles.titleBlock}>
+            <Text style={styles.tag}>{weddingTag(wedding.name)}</Text>
+            <Text style={styles.title}>{wedding.name}</Text>
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Settings"
+            style={styles.gear}
+            onPress={() => navigation.navigate('Settings')}
+          >
+            <Icon name="gear" color={colors.brownInk} size={22} />
+          </Pressable>
         </View>
 
         {count && wedding.weddingDate ? (
@@ -224,9 +234,6 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        <Pressable style={styles.logout} onPress={() => supabase.auth.signOut()}>
-          <Text style={styles.logoutText}>Log out</Text>
-        </Pressable>
       </ScrollView>
     </View>
   );
@@ -237,7 +244,18 @@ const styles = StyleSheet.create({
   strip: { backgroundColor: colors.maroon, borderBottomWidth: 2, borderBottomColor: colors.gold },
   content: { paddingTop: 24, paddingHorizontal: 20, paddingBottom: 32, gap: 20 },
   message: { fontFamily: fonts.semibold, fontSize: 16, color: colors.muted, padding: 20 },
-  titleBlock: { gap: 4 },
+  titleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  titleBlock: { flex: 1, gap: 4 },
+  gear: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: colors.tileBorder,
+    backgroundColor: colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   tag: { fontFamily: fonts.bold, fontSize: 12, letterSpacing: 2, color: colors.goldDark },
   title: { fontFamily: fonts.bold, fontSize: 28, color: colors.ink },
   countCard: {

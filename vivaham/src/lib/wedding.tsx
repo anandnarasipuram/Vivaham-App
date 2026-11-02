@@ -9,11 +9,14 @@ export type Wedding = {
   weddingDate: string | null;
   budgetLimit: number | null;
   role: string;
+  userId: string;
+  displayName: string | null;
   modules: Record<string, string>;
 };
 
 type Row = {
   role: string;
+  display_name: string | null;
   modules: Record<string, string> | null;
   weddings: { id: string; name: string; wedding_date: string | null; budget_limit: number | null } | null;
 };
@@ -34,9 +37,12 @@ export function WeddingProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState('');
 
   const load = useCallback(async () => {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const userId = sessionData.session?.user.id ?? '';
     const { data, error: loadError } = await supabase
       .from('wedding_members')
-      .select('role, modules, weddings(id, name, wedding_date, budget_limit)')
+      .select('role, modules, display_name, weddings(id, name, wedding_date, budget_limit)')
+      .eq('user_id', userId)
       .limit(1)
       .maybeSingle();
     if (loadError) {
@@ -53,6 +59,8 @@ export function WeddingProvider({ children }: { children: ReactNode }) {
         weddingDate: row.weddings.wedding_date,
         budgetLimit: row.weddings.budget_limit === null ? null : Number(row.weddings.budget_limit),
         role: row.role,
+        userId,
+        displayName: row.display_name,
         modules: row.modules ?? {},
       });
     } else {
