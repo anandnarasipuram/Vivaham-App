@@ -7,7 +7,7 @@ import { supabase } from '../lib/supabase';
 import { useWedding } from '../lib/wedding';
 import { colors, fonts } from '../theme';
 import { PrimaryButton, SecondaryButton } from './Buttons';
-import { ConfirmDialog, Dialog } from './Dialog';
+import { Dialog } from './Dialog';
 import { Input } from './Field';
 import Icon from './Icon';
 import { Card, ErrorText } from './ui';
@@ -123,13 +123,18 @@ export default function EventPhotos({ eventId }: { eventId: string }) {
         throw new Error(removeError.message);
       }
       await run(supabase.from('event_photos').delete().eq('id', viewing.id));
-      setConfirming(false);
-      setViewing(null);
+      closeViewer();
+      setBusy(false);
       await reload();
     } catch (failure) {
       setActionError(errorText(failure));
+      setBusy(false);
     }
-    setBusy(false);
+  }
+
+  function closeViewer() {
+    setConfirming(false);
+    setViewing(null);
   }
 
   return (
@@ -151,7 +156,10 @@ export default function EventPhotos({ eventId }: { eventId: string }) {
               accessibilityRole="imagebutton"
               accessibilityLabel={photo.caption ?? 'Event photo'}
               style={styles.thumb}
-              onPress={() => setViewing(photo)}
+              onPress={() => {
+                setActionError('');
+                setViewing(photo);
+              }}
             >
               {photo.url ? <Image source={{ uri: photo.url }} style={styles.image} /> : null}
               {photo.caption ? (
@@ -187,36 +195,36 @@ export default function EventPhotos({ eventId }: { eventId: string }) {
         <SecondaryButton label="Cancel" onPress={() => setChoosing(false)} />
       </Dialog>
 
-      <Modal visible={viewing !== null} animationType="fade" onRequestClose={() => setViewing(null)}>
+      <Modal visible={viewing !== null} animationType="fade" onRequestClose={closeViewer}>
         <View style={styles.viewer}>
           {viewing?.url ? <Image source={{ uri: viewing.url }} style={styles.full} resizeMode="contain" /> : null}
           {viewing?.caption ? <Text style={styles.caption}>{viewing.caption}</Text> : null}
           <ErrorText>{actionError}</ErrorText>
-          <View style={styles.viewerButtons}>
-            {canEdit ? (
-              <View style={styles.flex}>
-                <SecondaryButton
-                  tone="maroon"
-                  icon={<Icon name="trash" color={colors.maroon} size={18} />}
-                  label="Delete"
-                  onPress={() => setConfirming(true)}
-                />
-              </View>
-            ) : null}
-            <View style={styles.flex}>
-              <PrimaryButton size="medium" label="Close" onPress={() => setViewing(null)} />
+          {confirming ? (
+            <View style={styles.confirm}>
+              <Text style={styles.confirmTitle}>Delete this photo?</Text>
+              <Text style={styles.confirmText}>The photo will be removed for everyone in the wedding.</Text>
+              <PrimaryButton size="medium" label={busy ? 'Deleting…' : 'Yes, delete'} onPress={remove} disabled={busy} />
+              <SecondaryButton label="Keep it" onPress={() => setConfirming(false)} disabled={busy} />
             </View>
-          </View>
+          ) : (
+            <View style={styles.viewerButtons}>
+              {canEdit ? (
+                <View style={styles.flex}>
+                  <SecondaryButton
+                    tone="maroon"
+                    icon={<Icon name="trash" color={colors.maroon} size={18} />}
+                    label="Delete"
+                    onPress={() => setConfirming(true)}
+                  />
+                </View>
+              ) : null}
+              <View style={styles.flex}>
+                <PrimaryButton size="medium" label="Close" onPress={closeViewer} />
+              </View>
+            </View>
+          )}
         </View>
-        <ConfirmDialog
-          visible={confirming}
-          title="Delete this photo?"
-          message="The photo will be removed for everyone in the wedding."
-          busy={busy}
-          error={actionError}
-          onConfirm={remove}
-          onCancel={() => setConfirming(false)}
-        />
       </Modal>
     </Card>
   );
@@ -255,5 +263,16 @@ const styles = StyleSheet.create({
   full: { flex: 1, width: '100%' },
   caption: { fontFamily: fonts.semibold, fontSize: 16, color: colors.white, textAlign: 'center' },
   viewerButtons: { flexDirection: 'row', gap: 10, paddingBottom: 20 },
+  confirm: {
+    backgroundColor: colors.cream,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: colors.gold,
+    padding: 16,
+    gap: 12,
+    marginBottom: 20,
+  },
+  confirmTitle: { fontFamily: fonts.bold, fontSize: 20, color: colors.ink },
+  confirmText: { fontFamily: fonts.medium, fontSize: 15, lineHeight: 22, color: colors.brownInk },
   flex: { flex: 1 },
 });

@@ -53,19 +53,20 @@ export function vehicleDates(vehicle: Vehicle) {
   return from && to ? `${from} – ${to}` : from || to;
 }
 
-export function vehicleLines(vehicles: Vehicle[]) {
-  return vehicles
-    .map((vehicle) => {
-      const driver = [vehicle.driver_name, vehicle.driver_phone].filter(Boolean).join(' ');
-      return `• ${[
-        [vehicle.vehicle_name, vehicle.vehicle_number].filter(Boolean).join(' '),
-        driver ? `Driver ${driver}` : '',
-        vehicleDates(vehicle),
-      ]
-        .filter(Boolean)
-        .join(' · ')}`;
-    })
+export function vehicleBlock(vehicle: Vehicle) {
+  const driver = [vehicle.driver_name, vehicle.driver_phone].filter(Boolean).join(' ');
+  return [
+    `🚗 ${[vehicle.vehicle_name, vehicle.vehicle_number].filter(Boolean).join(' · ')}`,
+    driver ? `Driver: ${driver}` : '',
+    vehicleDates(vehicle) ? `Available: ${vehicleDates(vehicle)}` : '',
+    vehicle.notes ? `Notes: ${vehicle.notes}` : '',
+  ]
+    .filter(Boolean)
     .join('\n');
+}
+
+export function vehicleLines(vehicles: Vehicle[]) {
+  return vehicles.map(vehicleBlock).join('\n\n');
 }
 
 export function whatsappNumber(phone: string | null) {

@@ -60,16 +60,16 @@ export default function ImportContactsScreen() {
       const phones = new Set(guests.map((guest) => last10(guest.phone)).filter((digits) => digits.length >= 7));
       const seen = new Set<string>();
       const list: Person[] = [];
-      contacts.forEach((contact) => {
+      contacts.forEach((contact, index) => {
         const name = (contact.fullName ?? '').trim();
         const phone = (contact.phones ?? []).find((item) => item.number)?.number?.trim() ?? '';
-        const key = `${name.toLowerCase()}|${last10(phone)}`;
-        if (!name || seen.has(key)) {
+        const duplicate = `${name.toLowerCase()}|${last10(phone)}`;
+        if (!name || seen.has(duplicate)) {
           return;
         }
-        seen.add(key);
+        seen.add(duplicate);
         list.push({
-          key: contact.id,
+          key: `${contact.id ?? 'contact'}#${index}`,
           name,
           phone,
           existing: names.has(name.toLowerCase()) || (last10(phone).length >= 7 && phones.has(last10(phone))),
@@ -95,13 +95,15 @@ export default function ImportContactsScreen() {
   const allFreshTicked = fresh.length > 0 && fresh.every((person) => ticked.has(person.key));
 
   function toggle(key: string) {
-    const next = new Set(ticked);
-    if (next.has(key)) {
-      next.delete(key);
-    } else {
-      next.add(key);
-    }
-    setTicked(next);
+    setTicked((current) => {
+      const next = new Set(current);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
   }
 
   async function importGuests() {
@@ -211,6 +213,7 @@ export default function ImportContactsScreen() {
             value={search}
             onChangeText={setSearch}
           />
+          <Text style={styles.selected}>{`${ticked.size} selected`}</Text>
           <View style={styles.between}>
             <Text style={styles.small}>{`${plural(people.length, 'contact', 'contacts')} · ${fresh.length} new`}</Text>
             <Pressable
@@ -234,12 +237,18 @@ export default function ImportContactsScreen() {
       <FlatList
         data={shown}
         keyExtractor={(person) => person.key}
+        extraData={ticked}
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={styles.content}
         ListHeaderComponent={header}
         initialNumToRender={30}
         renderItem={({ item }) => (
-          <Pressable style={styles.row} onPress={() => toggle(item.key)}>
+          <Pressable
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: ticked.has(item.key) }}
+            style={[styles.row, ticked.has(item.key) && styles.rowOn]}
+            onPress={() => toggle(item.key)}
+          >
             <TickBox checked={ticked.has(item.key)} label={`Import ${item.name}`} onPress={() => toggle(item.key)} />
             <View style={styles.flex}>
               <Text style={styles.name}>{item.name}</Text>
@@ -275,6 +284,8 @@ const styles = StyleSheet.create({
   small: { fontFamily: fonts.medium, fontSize: 13, color: colors.muted },
   selectAll: { minHeight: 44, justifyContent: 'center' },
   selectAllText: { fontFamily: fonts.bold, fontSize: 15, color: colors.maroon },
+  selected: { fontFamily: fonts.extrabold, fontSize: 17, color: colors.maroon },
+  rowOn: { borderColor: colors.green, backgroundColor: colors.tintGreen },
   result: { fontFamily: fonts.bold, fontSize: 15, color: colors.green },
   row: {
     flexDirection: 'row',

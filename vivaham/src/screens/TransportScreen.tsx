@@ -4,6 +4,7 @@ import { IconButton, PrimaryButton, SecondaryButton } from '../components/Button
 import { ConfirmDialog } from '../components/Dialog';
 import Icon from '../components/Icon';
 import Screen from '../components/Screen';
+import TickBox from '../components/TickBox';
 import { Badge, Card, EmptyBox, ErrorText, Note, Title } from '../components/ui';
 import { errorText, rows, run, useFocusData } from '../lib/data';
 import { plural } from '../lib/format';
@@ -31,6 +32,7 @@ export default function TransportScreen() {
   const [deleting, setDeleting] = useState<Vehicle | null>(null);
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState('');
+  const [picked, setPicked] = useState<Set<string>>(new Set());
 
   const { data: vehicles, error, reload } = useFocusData(
     () => (canSee ? fetchVehicles() : Promise.resolve([] as Vehicle[])),
@@ -53,17 +55,30 @@ export default function TransportScreen() {
     setBusy(false);
   }
 
-  async function share() {
+  async function share(list: Vehicle[]) {
     setActionError('');
     try {
       await openWhatsApp(
-        fill(TRANSPORT_GROUP_MESSAGE, { wedding: wedding?.name ?? 'the wedding', vehicles: vehicleLines(vehicles ?? []) })
+        fill(TRANSPORT_GROUP_MESSAGE, { wedding: wedding?.name ?? 'the wedding', vehicles: vehicleLines(list) })
       );
     } catch (failure) {
       setActionError(errorText(failure));
     }
   }
 
+  function togglePick(id: string) {
+    setPicked((current) => {
+      const next = new Set(current);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }
+
+  const selected = (vehicles ?? []).filter((vehicle) => picked.has(vehicle.id));
   const back = { label: 'Home', onPress: () => goHome(navigation) };
 
   if (!canSee) {
@@ -94,6 +109,11 @@ export default function TransportScreen() {
       {(vehicles ?? []).map((vehicle) => (
         <Card key={vehicle.id} style={styles.card}>
           <View style={styles.head}>
+            <TickBox
+              checked={picked.has(vehicle.id)}
+              label={`Select ${vehicle.vehicle_name} for sharing`}
+              onPress={() => togglePick(vehicle.id)}
+            />
             <View style={styles.iconBox}>
               <Icon name="car" color={colors.goldInk} size={22} />
             </View>
@@ -101,8 +121,20 @@ export default function TransportScreen() {
               <Text style={styles.name}>{vehicle.vehicle_name}</Text>
               {vehicle.vehicle_number ? <Text style={styles.small}>{vehicle.vehicle_number}</Text> : null}
             </View>
-            {vehicle.seats ? <Badge tone="gold" label={plural(vehicle.seats, 'seat', 'seats')} /> : null}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Share ${vehicle.vehicle_name} on WhatsApp`}
+              style={styles.shareOne}
+              onPress={() => share([vehicle])}
+            >
+              <Icon name="chat" color={colors.white} size={20} />
+            </Pressable>
           </View>
+          {vehicle.seats ? (
+            <View style={styles.badgeRow}>
+              <Badge tone="gold" label={plural(vehicle.seats, 'seat', 'seats')} />
+            </View>
+          ) : null}
           {vehicle.driver_name || vehicle.driver_phone ? (
             <View style={styles.driver}>
               <Text style={styles.label}>{`Driver: ${vehicle.driver_name ?? 'not set'}`}</Text>
@@ -146,8 +178,8 @@ export default function TransportScreen() {
           size="medium"
           color={colors.whatsapp}
           icon={<Icon name="chat" color={colors.white} size={20} />}
-          label="Share on WhatsApp"
-          onPress={share}
+          label={selected.length > 0 ? `Share selected (${selected.length})` : `Share all (${vehicles.length})`}
+          onPress={() => share(selected.length > 0 ? selected : vehicles)}
         />
       ) : null}
 
@@ -188,4 +220,13 @@ const styles = StyleSheet.create({
   dateValue: { fontFamily: fonts.bold, fontSize: 15, color: colors.ink },
   notes: { fontFamily: fonts.medium, fontSize: 14, lineHeight: 20, color: colors.brownInk },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  badgeRow: { flexDirection: 'row' },
+  shareOne: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.whatsapp,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });
