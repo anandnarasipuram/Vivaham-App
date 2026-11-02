@@ -17,7 +17,11 @@ export type IconName =
   | 'info'
   | 'down'
   | 'eye'
-  | 'dots';
+  | 'dots'
+  | 'car'
+  | 'gear'
+  | 'camera'
+  | 'phone';
 
 type Props = { name: IconName; color: string; size?: number };
 
@@ -128,6 +132,29 @@ export default function Icon({ name, color, size = 24 }: Props) {
           <Circle cx={12} cy={12} r={1.4} fill={color} />
           <Circle cx={19} cy={12} r={1.4} fill={color} />
         </>
+      )}
+      {name === 'car' && (
+        <>
+          <Path d="M3 17v-4l2.2-5.2A2 2 0 0 1 7 6.5h10a2 2 0 0 1 1.8 1.3L21 13v4H3z" />
+          <Path d="M3 13h18" />
+          <Circle cx={7.5} cy={17.5} r={1.8} />
+          <Circle cx={16.5} cy={17.5} r={1.8} />
+        </>
+      )}
+      {name === 'gear' && (
+        <>
+          <Circle cx={12} cy={12} r={3} />
+          <Path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1" />
+        </>
+      )}
+      {name === 'camera' && (
+        <>
+          <Path d="M4 8h3l2-3h6l2 3h3v11H4z" />
+          <Circle cx={12} cy={13} r={3.5} />
+        </>
+      )}
+      {name === 'phone' && (
+        <Path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z" />
       )}
     </Svg>
   );

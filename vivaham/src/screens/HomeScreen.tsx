@@ -18,6 +18,7 @@ type Summary = {
   rooms: number;
   places: number;
   tasksLeft: number;
+  vehicles: number;
 };
 
 type Tile = {
@@ -70,7 +71,7 @@ function rupees(amount: number) {
 }
 
 async function loadSummary(can: (module: string) => boolean): Promise<Summary> {
-  const [events, guests, shopping, requirements, expenses, meals, stays, tasks] = await Promise.all([
+  const [events, guests, shopping, requirements, expenses, meals, stays, tasks, vehicles] = await Promise.all([
     can('events') ? supabase.from('events').select('id', { count: 'exact', head: true }) : null,
     can('guests') ? supabase.from('guests').select('id', { count: 'exact', head: true }) : null,
     can('shopping') ? supabase.from('shopping_items').select('price, status') : null,
@@ -79,6 +80,7 @@ async function loadSummary(can: (module: string) => boolean): Promise<Summary> {
     can('food') ? supabase.from('meals').select('id', { count: 'exact', head: true }) : null,
     can('stays') ? supabase.from('accommodations').select('rooms') : null,
     can('todo') ? supabase.from('tasks').select('status') : null,
+    can('transport') ? supabase.from('vehicles').select('id', { count: 'exact', head: true }) : null,
   ]);
 
   const shoppingRows = (shopping?.data ?? []) as { price: number; status: string }[];
@@ -100,6 +102,7 @@ async function loadSummary(can: (module: string) => boolean): Promise<Summary> {
     rooms: stayRows.reduce((sum, row) => sum + (row.rooms ?? 0), 0),
     places: stayRows.length,
     tasksLeft: taskRows.filter((row) => row.status !== 'done').length,
+    vehicles: vehicles?.count ?? 0,
   };
 }
 
@@ -167,6 +170,7 @@ export default function HomeScreen() {
     },
     { module: 'food', route: 'Food', title: 'Food', subtitle: s ? `${s.meals} ${s.meals === 1 ? 'meal' : 'meals'} planned` : dash, icon: 'bowl', tint: colors.tintRose, ink: colors.maroon },
     { module: 'stays', route: 'Stays', title: 'Stays', subtitle: s ? `${s.rooms} rooms · ${s.places} ${s.places === 1 ? 'place' : 'places'}` : dash, icon: 'stays', tint: colors.tintGreen, ink: colors.green },
+    { module: 'transport', route: 'Transport', title: 'Transport', subtitle: s ? `${s.vehicles} ${s.vehicles === 1 ? 'vehicle' : 'vehicles'}` : dash, icon: 'car', tint: colors.tintGold, ink: colors.goldInk },
     { module: 'todo', route: 'Todo', title: 'To-do', subtitle: s ? `${s.tasksLeft} tasks left` : dash, icon: 'check', tint: colors.tintSand, ink: colors.brownInk },
   ];
   const tiles = allTiles.filter((tile) => access(tile.module) !== 'none');

@@ -14,6 +14,7 @@ import RequirementsStack from './RequirementsStack';
 import ShoppingStack from './ShoppingStack';
 import StaysStack from './StaysStack';
 import TodoStack from './TodoStack';
+import TransportStack from './TransportStack';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -36,6 +37,7 @@ const EXTRA_SCREENS: { name: string; component: ComponentType }[] = [
   { name: 'Budget', component: BudgetStack },
   { name: 'Food', component: FoodStack },
   { name: 'Stays', component: StaysStack },
+  { name: 'Transport', component: TransportStack },
 ];
 
 function Tabs() {
