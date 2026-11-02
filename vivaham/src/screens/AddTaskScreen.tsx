@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { PrimaryButton } from '../components/Buttons';
 import Calendar from '../components/Calendar';
 import { ChipGroup, EditableChips } from '../components/Chips';
 import Field from '../components/Field';
 import Screen from '../components/Screen';
+import Toggle from '../components/Toggle';
 import { ErrorText, Label, Note, Title } from '../components/ui';
 import { errorText, EventRow, fetchEvents, fetchPeople, run } from '../lib/data';
 import { fullDate, plural } from '../lib/format';
@@ -96,22 +97,12 @@ export default function AddTaskScreen() {
         />
       </View>
       <View style={styles.group}>
-        <Pressable
-          accessibilityRole="switch"
-          accessibilityState={{ checked: hasDeadline }}
-          style={styles.switchRow}
-          onPress={() => setHasDeadline(!hasDeadline)}
-        >
-          <View style={styles.flex}>
-            <Text style={styles.switchLabel}>Set a deadline</Text>
-            <Text style={styles.hint}>
-              {hasDeadline ? (deadline ? `Due ${fullDate(deadline)}` : 'Pick a date below') : 'No deadline'}
-            </Text>
-          </View>
-          <View style={[styles.track, hasDeadline && styles.trackOn]}>
-            <View style={[styles.knob, hasDeadline && styles.knobOn]} />
-          </View>
-        </Pressable>
+        <Toggle
+          label="Set a deadline"
+          hint={hasDeadline ? (deadline ? `Due ${fullDate(deadline)}` : 'Pick a date below') : 'No deadline'}
+          value={hasDeadline}
+          onChange={setHasDeadline}
+        />
         {hasDeadline ? <Calendar value={deadline} onChange={setDeadline} /> : null}
       </View>
       <ErrorText>{error}</ErrorText>
@@ -122,23 +113,5 @@ export default function AddTaskScreen() {
 
 const styles = StyleSheet.create({
   group: { gap: 10 },
-  flex: { flex: 1, gap: 2 },
   hint: { fontFamily: fonts.medium, fontSize: 13, color: colors.muted },
-  switchRow: {
-    minHeight: 56,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.tileBorder,
-    backgroundColor: colors.white,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  switchLabel: { fontFamily: fonts.bold, fontSize: 15, color: colors.ink },
-  track: { width: 48, height: 28, borderRadius: 14, backgroundColor: colors.tintSand, padding: 3 },
-  trackOn: { backgroundColor: colors.maroon },
-  knob: { width: 22, height: 22, borderRadius: 11, backgroundColor: colors.white },
-  knobOn: { alignSelf: 'flex-end' },
 });

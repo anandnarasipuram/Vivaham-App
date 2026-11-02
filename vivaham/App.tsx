@@ -15,6 +15,7 @@ import { supabase } from './src/lib/supabase';
 import { useWedding, WeddingProvider } from './src/lib/wedding';
 import AppNavigator from './src/navigation/AppNavigator';
 import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
+import JoinScreen from './src/screens/JoinScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import OnboardingScreen from './src/screens/OnboardingScreen';
 import SetPasswordScreen from './src/screens/SetPasswordScreen';
@@ -40,7 +41,8 @@ export default function App() {
   });
   const [session, setSession] = useState<Session | null>(null);
   const [checking, setChecking] = useState(true);
-  const [forgot, setForgot] = useState(false);
+  const [view, setView] = useState<'login' | 'forgot' | 'join'>('login');
+  const [joinCode, setJoinCode] = useState('');
   const [recovering, setRecovering] = useState(false);
   const [linkError, setLinkError] = useState('');
 
@@ -61,6 +63,12 @@ export default function App() {
   useEffect(() => {
     function handle(url: string | null | undefined) {
       if (!url) {
+        return;
+      }
+      const join = url.match(/join\/([A-Za-z0-9]{4,12})/);
+      if (join) {
+        setJoinCode(join[1].toUpperCase());
+        setView('join');
         return;
       }
       const params = linkParams(url);
@@ -96,12 +104,21 @@ export default function App() {
         linkError={linkError}
         onDone={() => {
           setRecovering(false);
-          setForgot(false);
+          setView('login');
         }}
         onCancel={() => {
           setRecovering(false);
           supabase.auth.signOut();
         }}
+      />
+    );
+  } else if (view === 'join') {
+    content = (
+      <JoinScreen
+        key={joinCode}
+        initialCode={joinCode}
+        onDone={() => setView('login')}
+        onCancel={() => setView('login')}
       />
     );
   } else if (session) {
@@ -110,10 +127,10 @@ export default function App() {
         <Main />
       </WeddingProvider>
     );
-  } else if (forgot) {
-    content = <ForgotPasswordScreen onBack={() => setForgot(false)} />;
+  } else if (view === 'forgot') {
+    content = <ForgotPasswordScreen onBack={() => setView('login')} />;
   } else {
-    content = <LoginScreen onForgot={() => setForgot(true)} notice={linkError} />;
+    content = <LoginScreen onForgot={() => setView('forgot')} onJoin={() => setView('join')} notice={linkError} />;
   }
 
   return (

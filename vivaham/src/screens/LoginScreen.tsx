@@ -4,9 +4,9 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import { supabase } from '../lib/supabase';
 import { colors, fonts } from '../theme';
 
-type Props = { onForgot: () => void; notice?: string };
+type Props = { onForgot: () => void; onJoin: () => void; notice?: string };
 
-export default function LoginScreen({ onForgot, notice }: Props) {
+export default function LoginScreen({ onForgot, onJoin, notice }: Props) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -121,6 +121,11 @@ export default function LoginScreen({ onForgot, notice }: Props) {
         <Pressable style={[styles.button, loading && styles.buttonDisabled]} onPress={handleLogin} disabled={loading}>
           <Text style={styles.buttonText}>{loading ? 'Logging in…' : 'Log in'}</Text>
         </Pressable>
+        <Pressable accessibilityRole="link" style={styles.join} onPress={onJoin}>
+          <Text style={styles.joinText}>
+            Have an invite code? <Text style={styles.joinLink}>Join</Text>
+          </Text>
+        </Pressable>
       </View>
     </ScrollView>
   );
@@ -190,5 +195,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   buttonDisabled: { opacity: 0.6 },
+  join: { minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+  joinText: { fontFamily: fonts.medium, fontSize: 15, color: colors.brownInk },
+  joinLink: { fontFamily: fonts.bold, color: colors.maroon },
   buttonText: { fontFamily: fonts.bold, fontSize: 17, color: colors.white },
 });
