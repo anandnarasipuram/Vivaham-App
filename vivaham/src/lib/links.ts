@@ -12,6 +12,12 @@ export async function resetRedirectUrl() {
   return 'vivaham://reset-password';
 }
 
+export function clearWebPath() {
+  if (Platform.OS === 'web' && window.location.pathname !== '/') {
+    window.history.replaceState(null, '', '/');
+  }
+}
+
 export function linkParams(url: string) {
   const params: Record<string, string> = {};
   const parts = [url.split('#')[1] ?? '', url.split('#')[0].split('?')[1] ?? ''];

@@ -12,7 +12,7 @@ import Screen from '../components/Screen';
 import { Avatar, Badge, Card, ErrorText, Label, Lead, Note, Title } from '../components/ui';
 import { errorText, rows, run, useFocusData } from '../lib/data';
 import { fullDate, initial, shortDate } from '../lib/format';
-import { fill, JOIN_MESSAGE, openWhatsApp } from '../lib/messages';
+import { copyText, joinLink, joinMessage, openWhatsApp } from '../lib/messages';
 import { Level, PRESETS, Role, roleLabel, ROLES } from '../lib/roles';
 import { supabase } from '../lib/supabase';
 import { useWedding } from '../lib/wedding';
@@ -195,7 +195,14 @@ export default function SettingsScreen() {
     await reloadLists();
   }
 
-  const joinMessage = fill(JOIN_MESSAGE, { code });
+  const messageFor = (inviteCode: string) => joinMessage(inviteCode, wedding?.name ?? 'our wedding');
+  const share = (inviteCode: string) => (
+    <InviteShare
+      code={inviteCode}
+      message={messageFor(inviteCode)}
+      onError={(failure) => setActionError(errorText(failure))}
+    />
+  );
 
   return (
     <Screen back={{ label: 'Home', onPress: () => navigation.goBack() }} gap={20}>
@@ -313,16 +320,14 @@ export default function SettingsScreen() {
                 <Text selectable style={styles.code}>
                   {code}
                 </Text>
-                <Text style={styles.small}>Press and hold the code to copy it.</Text>
-                <PrimaryButton
-                  size="medium"
-                  color={colors.whatsapp}
-                  icon={<Icon name="chat" color={colors.white} size={20} />}
-                  label="Share on WhatsApp"
-                  onPress={() => openWhatsApp(joinMessage).catch((failure) => setActionError(errorText(failure)))}
-                />
+                {joinLink(code) ? (
+                  <Text selectable style={styles.link}>
+                    {joinLink(code)}
+                  </Text>
+                ) : null}
+                {share(code)}
                 {Platform.OS !== 'web' ? (
-                  <SecondaryButton label="Share another way" onPress={() => Share.share({ message: joinMessage })} />
+                  <SecondaryButton label="Share another way" onPress={() => Share.share({ message: messageFor(code) })} />
                 ) : null}
               </View>
             ) : null}
@@ -331,26 +336,29 @@ export default function SettingsScreen() {
           <Text style={styles.h3}>Open invites</Text>
           {data && data.invites.length === 0 ? <Note>No open invites.</Note> : null}
           {(data?.invites ?? []).map((invite) => (
-            <Card key={invite.code} style={styles.inviteRow}>
-              <View style={styles.flex}>
-                <Text selectable style={styles.inviteCode}>
-                  {invite.code}
-                </Text>
-                <Text style={styles.small}>
-                  {[roleLabel(invite.role), invite.expires_at ? `Expires ${shortDate(invite.expires_at.slice(0, 10))}` : '']
-                    .filter(Boolean)
-                    .join(' · ')}
-                </Text>
+            <Card key={invite.code} style={styles.inviteCard}>
+              <View style={styles.inviteRow}>
+                <View style={styles.flex}>
+                  <Text selectable style={styles.inviteCode}>
+                    {invite.code}
+                  </Text>
+                  <Text style={styles.small}>
+                    {[roleLabel(invite.role), invite.expires_at ? `Expires ${shortDate(invite.expires_at.slice(0, 10))}` : '']
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </Text>
+                </View>
+                <IconButton
+                  label={`Delete invite ${invite.code}`}
+                  disabled={busy}
+                  onPress={() =>
+                    act(() => run(supabase.from('wedding_invites').delete().eq('code', invite.code)))
+                  }
+                >
+                  <Icon name="trash" color={colors.maroon} size={18} />
+                </IconButton>
               </View>
-              <IconButton
-                label={`Delete invite ${invite.code}`}
-                disabled={busy}
-                onPress={() =>
-                  act(() => run(supabase.from('wedding_invites').delete().eq('code', invite.code)))
-                }
-              >
-                <Icon name="trash" color={colors.maroon} size={18} />
-              </IconButton>
+              {share(invite.code)}
             </Card>
           ))}
         </View>
@@ -412,6 +420,33 @@ const styles = StyleSheet.create({
     color: colors.maroon,
     textAlign: 'center',
   },
-  inviteRow: { padding: 12, paddingLeft: 16, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  inviteCard: { padding: 12, paddingLeft: 16, gap: 10 },
+  inviteRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  link: { fontFamily: fonts.semibold, fontSize: 14, color: colors.brownInk, textAlign: 'center' },
+  shareRow: { flexDirection: 'row', gap: 8 },
+  shareFlex: { flex: 1 },
   inviteCode: { fontFamily: fonts.extrabold, fontSize: 18, letterSpacing: 3, color: colors.ink },
 });
+
+function InviteShare({ code, message, onError }: { code: string; message: string; onError: (failure: unknown) => void }) {
+  const link = joinLink(code);
+  return (
+    <View style={styles.shareRow}>
+      <View style={styles.shareFlex}>
+        <PrimaryButton
+          size="small"
+          color={colors.whatsapp}
+          icon={<Icon name="chat" color={colors.white} size={18} />}
+          label="WhatsApp"
+          onPress={() => openWhatsApp(message).catch(onError)}
+        />
+      </View>
+      <View style={styles.shareFlex}>
+        <SecondaryButton
+          label={link ? 'Copy link' : 'Copy code'}
+          onPress={() => copyText(link || code).catch(onError)}
+        />
+      </View>
+    </View>
+  );
+}

@@ -1,4 +1,6 @@
-import { Linking } from 'react-native';
+import { Linking, Platform, Share } from 'react-native';
+import { APP_URL } from './config';
+import { notify } from './dialog';
 import { shortDate } from './format';
 
 export const DEFAULT_COUNTRY_CODE = '91';
@@ -13,6 +15,9 @@ export const TRANSPORT_MESSAGE =
   'Hello {name} 🙏\nVehicles available during the wedding:\n{vehicles}\nPlease contact the driver directly for pickups.';
 
 export const TRANSPORT_GROUP_MESSAGE = 'Vehicles for {wedding} 🚗\n{vehicles}\nPlease contact the driver directly for pickups.';
+
+export const JOIN_LINK_MESSAGE =
+  "You're invited to help with {wedding} on Vivaham 🎉\n1. Open: {link}\n2. Sign up with your email\n3. On iPhone: Share > Add to Home Screen. On Android: menu > Install app.\nInvite code (if asked): {code}";
 
 export const JOIN_MESSAGE =
   "Join our wedding planner on Vivaham 💍\n1. Open the app\n2. Tap 'Have an invite code?'\n3. Enter code {code}";
@@ -77,4 +82,26 @@ export function whatsappNumber(phone: string | null) {
 export function openWhatsApp(text: string, phone?: string | null) {
   const number = phone ? whatsappNumber(phone) : '';
   return Linking.openURL(`https://wa.me/${number}?text=${encodeURIComponent(text)}`);
+}
+
+export function joinLink(code: string) {
+  return APP_URL ? `${APP_URL}/join/${code}` : '';
+}
+
+export function joinMessage(code: string, wedding: string) {
+  const link = joinLink(code);
+  return link ? fill(JOIN_LINK_MESSAGE, { wedding, link, code }) : fill(JOIN_MESSAGE, { code });
+}
+
+export async function copyText(text: string) {
+  if (Platform.OS === 'web') {
+    try {
+      await navigator.clipboard.writeText(text);
+      notify('Copied', text);
+    } catch {
+      window.prompt('Copy this:', text);
+    }
+    return;
+  }
+  await Share.share({ message: text });
 }

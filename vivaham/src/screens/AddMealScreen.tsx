@@ -24,7 +24,7 @@ const MEAL_TIMES: Record<string, string> = {
 export default function AddMealScreen() {
   const navigation = useNav();
   const params = useParams<{ eventId: string; plan: number }>();
-  const plan = params.plan ?? 0;
+  const plan = Number(params.plan ?? 0) || 0;
   const { wedding, access } = useWedding();
   const [event, setEvent] = useState<EventRow | null>(null);
   const [mealOptions, setMealOptions] = useState(Object.keys(MEAL_TIMES));

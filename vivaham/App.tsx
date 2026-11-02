@@ -12,7 +12,7 @@ import {
 } from '@expo-google-fonts/plus-jakarta-sans';
 import Screen from './src/components/Screen';
 import { Note } from './src/components/ui';
-import { linkParams } from './src/lib/links';
+import { clearWebPath, linkParams } from './src/lib/links';
 import { supabase } from './src/lib/supabase';
 import { useWedding, WeddingProvider } from './src/lib/wedding';
 import AppNavigator from './src/navigation/AppNavigator';
@@ -110,6 +110,7 @@ export default function App() {
       <SetPasswordScreen
         linkError={linkError}
         onDone={() => {
+          clearWebPath();
           setRecovering(false);
           setView('login');
         }}
@@ -124,8 +125,14 @@ export default function App() {
       <JoinScreen
         key={joinCode}
         initialCode={joinCode}
-        onDone={() => setView('login')}
-        onCancel={() => setView('login')}
+        onDone={() => {
+          clearWebPath();
+          setView('login');
+        }}
+        onCancel={() => {
+          clearWebPath();
+          setView('login');
+        }}
       />
     );
   } else if (session) {
