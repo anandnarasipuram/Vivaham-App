@@ -1,7 +1,7 @@
 # WEB.md — Vivaham web/PWA build + invite link
 
 Read CLAUDE.md first. All its rules still apply: no secret keys in the app, never commit `.env`, run `npx tsc --noEmit` after each item, local commits only, NEVER push.
-Goal: the same app runs in a phone browser (installable via "Add to Home Screen"), is hosted free on Cloudflare Pages, and the WhatsApp invite contains a real link.
+Goal: the same app runs in a phone browser (installable via "Add to Home Screen"), is hosted free on Cloudflare (Workers static assets), and the WhatsApp invite contains a real link.
 One allowed exception to the "no new packages" rule: the web packages in item W1.
 
 ## W1. Web packages and config
@@ -37,10 +37,10 @@ Audit all screens and fix:
   ```
   Keep the viewport meta tag that the template already has.
 - No service worker for now (avoids stale-cache bugs during the wedding).
-- Create `public/_redirects` containing exactly: `/* /index.html 200`
+- Deep links: `wrangler.jsonc` sets `assets.not_found_handling` to `single-page-application`, so every unknown path serves `index.html`. (No `public/_redirects`: Cloudflare rejects `/* /index.html 200` as an infinite loop.)
 
 ## W4. Invite links
-- Add `EXPO_PUBLIC_APP_URL` to `.env` and `.env.example` (placeholder `https://your-site.pages.dev`). Read it in one place: `src/lib/config.ts`.
+- Add `EXPO_PUBLIC_APP_URL` to `.env` and `.env.example` (placeholder `https://vivaham.your-subdomain.workers.dev`). Read it in one place: `src/lib/config.ts`.
 - Add react-navigation `linking` config so `https://<site>/join/<code>` opens the Join screen with the code prefilled (also keep `vivaham://join/<code>`). If the user is not signed in, they log in or sign up first, then land on Join with the code kept.
 - Update the invite WhatsApp message in Settings (`src/lib/messages.ts`) to:
   ```
@@ -65,8 +65,8 @@ Audit all screens and fix:
 1. Create a free account at cloudflare.com.
 2. Terminal in the project: `npx wrangler login` (opens the browser to allow access).
 3. `npm run build:web`
-4. `npx wrangler pages deploy dist --project-name vivaham` (first time: confirm creating the project). Open the URL it prints and check the app.
-5. Put the production URL in `.env` as `EXPO_PUBLIC_APP_URL=https://vivaham.pages.dev`, then rebuild and redeploy (the value is baked in at build time).
+4. `npx wrangler deploy` (uses `wrangler.jsonc`). Open the URL it prints and check the app. Or connect the GitHub repository in the Cloudflare dashboard with root directory `vivaham`, build command `npm run build:web` and deploy command `npx wrangler deploy` (see DEPLOY_WEB.md).
+5. Put the production URL in `.env` as `EXPO_PUBLIC_APP_URL=https://vivaham.<your-subdomain>.workers.dev`, then rebuild and redeploy (the value is baked in at build time).
 6. Supabase > Authentication > URL Configuration: set Site URL and add the same URL to Redirect URLs.
 7. Open the URL on iPhone Safari and Android Chrome. iPhone: Share > Add to Home Screen. Android: menu > Install app.
 8. Redeploy every time the code changes (steps 3 and 4).
@@ -87,4 +87,4 @@ Audit all screens and fix:
 - Contacts import is phone-app only. Camera capture is limited on web.
 - iPhone PWAs need Safari "Add to Home Screen" (Chrome on iPhone also works on recent iOS).
 - No push notifications.
-- Free Cloudflare Pages tier is plenty for this use.
+- Free Cloudflare Workers tier is plenty for this use.
