@@ -17,6 +17,13 @@ export const colors = {
   tintGreen: '#E4EDE0',
   tintRose: '#F7E4E1',
   tintSand: '#F1E7D6',
+  tickBorder: '#B9A684',
+  roseBorder: '#E8C4BE',
+  goldBorder: '#EAD9A8',
+  greenBorder: '#C9DBC3',
+  rule: '#E2CF9F',
+  whatsapp: '#1E6B45',
+  overlay: 'rgba(42,26,20,0.55)',
 };
 
 export const fonts = {

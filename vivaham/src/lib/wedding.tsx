@@ -7,6 +7,7 @@ export type Wedding = {
   id: string;
   name: string;
   weddingDate: string | null;
+  budgetLimit: number | null;
   role: string;
   modules: Record<string, string>;
 };
@@ -14,7 +15,7 @@ export type Wedding = {
 type Row = {
   role: string;
   modules: Record<string, string> | null;
-  weddings: { id: string; name: string; wedding_date: string | null } | null;
+  weddings: { id: string; name: string; wedding_date: string | null; budget_limit: number | null } | null;
 };
 
 type WeddingState = {
@@ -22,6 +23,7 @@ type WeddingState = {
   loading: boolean;
   error: string;
   access: (module: string) => Access;
+  reload: () => Promise<void>;
 };
 
 const WeddingContext = createContext<WeddingState | undefined>(undefined);
@@ -34,7 +36,7 @@ export function WeddingProvider({ children }: { children: ReactNode }) {
   const load = useCallback(async () => {
     const { data, error: loadError } = await supabase
       .from('wedding_members')
-      .select('role, modules, weddings(id, name, wedding_date)')
+      .select('role, modules, weddings(id, name, wedding_date, budget_limit)')
       .limit(1)
       .maybeSingle();
     if (loadError) {
@@ -42,15 +44,19 @@ export function WeddingProvider({ children }: { children: ReactNode }) {
       setLoading(false);
       return;
     }
+    setError('');
     const row = data as unknown as Row | null;
     if (row && row.weddings) {
       setWedding({
         id: row.weddings.id,
         name: row.weddings.name,
         weddingDate: row.weddings.wedding_date,
+        budgetLimit: row.weddings.budget_limit === null ? null : Number(row.weddings.budget_limit),
         role: row.role,
         modules: row.modules ?? {},
       });
+    } else {
+      setWedding(null);
     }
     setLoading(false);
   }, []);
@@ -74,7 +80,7 @@ export function WeddingProvider({ children }: { children: ReactNode }) {
   );
 
   return (
-    <WeddingContext.Provider value={{ wedding, loading, error, access }}>
+    <WeddingContext.Provider value={{ wedding, loading, error, access, reload: load }}>
       {children}
     </WeddingContext.Provider>
   );
