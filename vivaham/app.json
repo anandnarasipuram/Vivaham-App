@@ -20,7 +20,13 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "bundler": "metro",
+      "output": "single",
+      "favicon": "./assets/favicon.png",
+      "name": "Vivaham",
+      "shortName": "Vivaham",
+      "themeColor": "#7A1F2B",
+      "backgroundColor": "#FBF6EC"
     },
     "plugins": [
       "expo-font",
