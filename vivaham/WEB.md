@@ -1,7 +1,7 @@
 # WEB.md — Vivaham web/PWA build + invite link
 
 Read CLAUDE.md first. All its rules still apply: no secret keys in the app, never commit `.env`, run `npx tsc --noEmit` after each item, local commits only, NEVER push.
-Goal: the same app runs in a phone browser (installable via "Add to Home Screen"), is hosted free on Netlify, and the WhatsApp invite contains a real link.
+Goal: the same app runs in a phone browser (installable via "Add to Home Screen"), is hosted free on Cloudflare Pages, and the WhatsApp invite contains a real link.
 One allowed exception to the "no new packages" rule: the web packages in item W1.
 
 ## W1. Web packages and config
@@ -40,7 +40,7 @@ Audit all screens and fix:
 - Create `public/_redirects` containing exactly: `/* /index.html 200`
 
 ## W4. Invite links
-- Add `EXPO_PUBLIC_APP_URL` to `.env` and `.env.example` (placeholder `https://your-site.netlify.app`). Read it in one place: `src/lib/config.ts`.
+- Add `EXPO_PUBLIC_APP_URL` to `.env` and `.env.example` (placeholder `https://your-site.pages.dev`). Read it in one place: `src/lib/config.ts`.
 - Add react-navigation `linking` config so `https://<site>/join/<code>` opens the Join screen with the code prefilled (also keep `vivaham://join/<code>`). If the user is not signed in, they log in or sign up first, then land on Join with the code kept.
 - Update the invite WhatsApp message in Settings (`src/lib/messages.ts`) to:
   ```
@@ -59,17 +59,17 @@ Audit all screens and fix:
 - Write results to `WEB_REPORT.md` (what works, what is disabled on web, known issues).
 
 ## W6. Docs
-- Add `DEPLOY_WEB.md` with the exact manual steps for the user (below). Do not run deploy commands yourself and do not log in to Netlify.
+- Add `DEPLOY_WEB.md` with the exact manual steps for the user (below). Do not run deploy commands yourself and do not log in to Cloudflare.
 
 ## Manual steps for the user (put in DEPLOY_WEB.md)
-1. Create a free account at netlify.com.
-2. Terminal in the project: `npm install -g netlify-cli`, then `netlify login`.
+1. Create a free account at cloudflare.com.
+2. Terminal in the project: `npx wrangler login` (opens the browser to allow access).
 3. `npm run build:web`
-4. `netlify deploy --dir dist` (first time: create a new site, name e.g. vivaham-yourname). Check the draft URL, then `netlify deploy --dir dist --prod`.
-5. Put the production URL in `.env` as `EXPO_PUBLIC_APP_URL=https://vivaham-yourname.netlify.app`, then rebuild and redeploy (the value is baked in at build time).
+4. `npx wrangler pages deploy dist --project-name vivaham` (first time: confirm creating the project). Open the URL it prints and check the app.
+5. Put the production URL in `.env` as `EXPO_PUBLIC_APP_URL=https://vivaham.pages.dev`, then rebuild and redeploy (the value is baked in at build time).
 6. Supabase > Authentication > URL Configuration: set Site URL and add the same URL to Redirect URLs.
 7. Open the URL on iPhone Safari and Android Chrome. iPhone: Share > Add to Home Screen. Android: menu > Install app.
-8. Redeploy every time the code changes (steps 3 and 4 with `--prod`).
+8. Redeploy every time the code changes (steps 3 and 4).
 
 ## Test checklist (WEB_REPORT.md must tick each)
 - [ ] Opens on iPhone Safari and Android Chrome; add to Home Screen shows maroon Vivaham icon, opens full screen
@@ -87,4 +87,4 @@ Audit all screens and fix:
 - Contacts import is phone-app only. Camera capture is limited on web.
 - iPhone PWAs need Safari "Add to Home Screen" (Chrome on iPhone also works on recent iOS).
 - No push notifications.
-- Free Netlify tier is plenty for this use.
+- Free Cloudflare Pages tier is plenty for this use.
