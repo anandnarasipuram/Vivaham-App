@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import BackPill from '../components/BackPill';
-import { PrimaryButton } from '../components/Buttons';
+import { PrimaryButton, SecondaryButton } from '../components/Buttons';
 import { ChipGroup } from '../components/Chips';
 import { Input } from '../components/Field';
 import TopStrip from '../components/TopStrip';
@@ -177,6 +177,7 @@ export default function GuestsListScreen() {
                 label="+ Add a guest"
                 onPress={() => navigation.navigate('AddGuest', { eventId: selected?.id })}
               />
+              <SecondaryButton label="Import from contacts" onPress={() => navigation.navigate('ImportContacts')} />
             </View>
           ) : undefined
         }
@@ -237,5 +238,5 @@ const styles = StyleSheet.create({
   },
   rsvpOn: { borderWidth: 2 },
   rsvpText: { fontFamily: fonts.semibold, fontSize: 14, color: colors.ink, textAlign: 'center' },
-  footer: { marginTop: 18 },
+  footer: { marginTop: 18, gap: 10 },
 });

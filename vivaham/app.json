@@ -31,6 +31,12 @@
           "cameraPermission": "Vivaham uses the camera so you can take event photos and share them with your family.",
           "microphonePermission": false
         }
+      ],
+      [
+        "expo-contacts",
+        {
+          "contactsPermission": "Vivaham reads your contacts so you can add wedding guests without typing their names and numbers."
+        }
       ]
     ]
   }
