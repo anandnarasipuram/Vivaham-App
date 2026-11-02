@@ -10,6 +10,7 @@ import { colors, fonts } from '../theme';
 import EventsStack from './EventsStack';
 import GuestsStack from './GuestsStack';
 import RequirementsStack from './RequirementsStack';
+import StaysStack from './StaysStack';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -31,7 +32,7 @@ const EXTRA_SCREENS: { name: string; component: ComponentType }[] = [
   { name: 'Requirements', component: RequirementsStack },
   { name: 'Budget', component: PlaceholderScreen },
   { name: 'Food', component: PlaceholderScreen },
-  { name: 'Stays', component: PlaceholderScreen },
+  { name: 'Stays', component: StaysStack },
 ];
 
 function Tabs() {
