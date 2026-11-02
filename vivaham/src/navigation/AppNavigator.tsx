@@ -5,7 +5,6 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Icon, { IconName } from '../components/Icon';
 import HomeScreen from '../screens/HomeScreen';
-import PlaceholderScreen from '../screens/PlaceholderScreen';
 import { colors, fonts } from '../theme';
 import BudgetStack from './BudgetStack';
 import EventsStack from './EventsStack';
@@ -14,6 +13,7 @@ import GuestsStack from './GuestsStack';
 import RequirementsStack from './RequirementsStack';
 import ShoppingStack from './ShoppingStack';
 import StaysStack from './StaysStack';
+import TodoStack from './TodoStack';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -28,7 +28,7 @@ const TABS: { name: string; label: string; icon: IconName; component: ComponentT
   { name: 'Events', label: 'Events', icon: 'calendar', component: EventsStack },
   { name: 'Guests', label: 'Guests', icon: 'guests', component: GuestsStack },
   { name: 'Shopping', label: 'Shopping', icon: 'bag', component: ShoppingStack },
-  { name: 'Todo', label: 'To-do', icon: 'check', component: PlaceholderScreen },
+  { name: 'Todo', label: 'To-do', icon: 'check', component: TodoStack },
 ];
 
 const EXTRA_SCREENS: { name: string; component: ComponentType }[] = [
