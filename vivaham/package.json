@@ -37,7 +37,9 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "test": "jest"
+    "test": "jest",
+    "build:web": "expo export -p web",
+    "serve:web": "npx serve dist -s"
   },
   "private": true,
   "jest": {
