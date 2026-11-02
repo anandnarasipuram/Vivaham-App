@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { AddButton, IconButton, LinkButton, SecondaryButton } from '../components/Buttons';
 import Chevron from '../components/Chevron';
+import EventPhotos from '../components/EventPhotos';
 import Field from '../components/Field';
 import Icon from '../components/Icon';
 import Screen from '../components/Screen';
@@ -211,6 +212,8 @@ export default function EventDetailScreen() {
           </Pressable>
         ))}
       </Card>
+
+      <EventPhotos eventId={event.id} />
 
       {canEdit ? (
         <SecondaryButton label="Edit event" onPress={() => navigation.navigate('EditEvent', { eventId })} />

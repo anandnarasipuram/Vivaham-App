@@ -23,7 +23,15 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-font"
+      "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Vivaham uses your photos so you can add decoration ideas and event photos for your family to see.",
+          "cameraPermission": "Vivaham uses the camera so you can take event photos and share them with your family.",
+          "microphonePermission": false
+        }
+      ]
     ]
   }
 }

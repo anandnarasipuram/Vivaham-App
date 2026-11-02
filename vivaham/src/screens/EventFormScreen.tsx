@@ -213,11 +213,18 @@ export default function EventFormScreen() {
     setDeleting(true);
     setDeleteError('');
     try {
+      const photos = await rows<{ path: string }>(supabase.from('event_photos').select('path').eq('event_id', eventId));
+      if (photos.length > 0) {
+        const { error: storageError } = await supabase.storage.from('event-photos').remove(photos.map((photo) => photo.path));
+        if (storageError) {
+          throw new Error(storageError.message);
+        }
+      }
       const meals = await rows<{ id: string }>(supabase.from('meals').select('id').eq('event_id', eventId));
       if (meals.length > 0) {
         await run(supabase.from('dishes').delete().in('meal_id', meals.map((meal) => meal.id)));
       }
-      for (const table of ['event_vendors', 'schedule_items', 'guest_events', 'requirements', 'shopping_items', 'meals']) {
+      for (const table of ['event_photos', 'event_vendors', 'schedule_items', 'guest_events', 'requirements', 'shopping_items', 'meals']) {
         await run(supabase.from(table).delete().eq('event_id', eventId));
       }
       for (const table of ['tasks', 'expenses']) {
@@ -423,7 +430,7 @@ export default function EventFormScreen() {
       <ConfirmDialog
         visible={confirming}
         title="Delete this event?"
-        message={`${name ?? 'This event'} will be removed with its schedule, vendors, invitations, requirements, shopping items and meals. Tasks and expenses stay and move to the whole wedding.`}
+        message={`${name ?? 'This event'} will be removed with its photos, schedule, vendors, invitations, requirements, shopping items and meals. Tasks and expenses stay and move to the whole wedding.`}
         busy={deleting}
         error={deleteError}
         onConfirm={remove}
