@@ -4,7 +4,9 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import { supabase } from '../lib/supabase';
 import { colors, fonts } from '../theme';
 
-export default function LoginScreen() {
+type Props = { onForgot: () => void; notice?: string };
+
+export default function LoginScreen({ onForgot, notice }: Props) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -107,12 +109,12 @@ export default function LoginScreen() {
               </Svg>
             </Pressable>
           </View>
-          <Pressable style={styles.forgot}>
+          <Pressable style={styles.forgot} onPress={onForgot}>
             <Text style={styles.forgotText}>Forgot password?</Text>
           </Pressable>
         </View>
 
-        {error ? <Text style={styles.error}>{error}</Text> : null}
+        {error || notice ? <Text style={styles.error}>{error || notice}</Text> : null}
 
         <View style={styles.spacer} />
 

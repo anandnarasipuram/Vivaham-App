@@ -1,5 +1,7 @@
-import { StyleSheet, Text, TextInput, TextInputProps, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, StyleSheet, Text, TextInput, TextInputProps, View } from 'react-native';
 import { colors, fonts } from '../theme';
+import Icon from './Icon';
 
 type Props = TextInputProps & { label?: string; hint?: string; small?: boolean };
 
@@ -45,6 +47,32 @@ export function MoneyField({ label, ...props }: TextInputProps & { label: string
   );
 }
 
+export function PasswordField({ label, ...props }: TextInputProps & { label: string }) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <View style={styles.field}>
+      <Text style={styles.label}>{label}</Text>
+      <View style={styles.password}>
+        <TextInput
+          accessibilityLabel={label}
+          placeholderTextColor={colors.placeholder}
+          secureTextEntry={!visible}
+          autoCapitalize="none"
+          style={styles.passwordInput}
+          {...props}
+        />
+        <Pressable
+          style={styles.eye}
+          accessibilityLabel={visible ? 'Hide password' : 'Show password'}
+          onPress={() => setVisible(!visible)}
+        >
+          <Icon name="eye" color={colors.muted} size={22} />
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   field: { gap: 8 },
   flex: { flex: 1 },
@@ -75,5 +103,18 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   rupee: { fontFamily: fonts.bold, fontSize: 16, color: colors.muted },
+  password: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 52,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.white,
+    paddingLeft: 16,
+    paddingRight: 4,
+  },
+  passwordInput: { flex: 1, height: 50, fontFamily: fonts.medium, fontSize: 16, color: colors.ink },
+  eye: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   moneyInput: { flex: 1, height: 50, fontFamily: fonts.semibold, fontSize: 16, color: colors.ink },
 });

@@ -3,6 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon, { IconName } from '../components/Icon';
+import { weddingTag } from '../lib/format';
 import { supabase } from '../lib/supabase';
 import { useWedding } from '../lib/wedding';
 import { colors, fonts } from '../theme';
@@ -175,7 +176,7 @@ export default function HomeScreen() {
       {strip}
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.titleBlock}>
-          <Text style={styles.tag}>ॐ · VIVAHAM</Text>
+          <Text style={styles.tag}>{weddingTag(wedding.name)}</Text>
           <Text style={styles.title}>{wedding.name}</Text>
         </View>
 

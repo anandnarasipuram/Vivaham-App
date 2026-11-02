@@ -96,3 +96,8 @@ export function parseAmount(text: string) {
   const value = Number(text.replace(/[^0-9.]/g, ''));
   return Number.isFinite(value) ? value : 0;
 }
+
+export function weddingTag(name: string) {
+  const base = name.replace(/[’']s wedding$/i, '').trim();
+  return `ॐ · ${base ? `${base.toUpperCase()}’S ` : ''}VIVAHAM`;
+}
