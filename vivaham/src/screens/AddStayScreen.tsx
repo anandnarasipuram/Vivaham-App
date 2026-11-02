@@ -28,6 +28,7 @@ export default function AddStayScreen() {
   const [rooms, setRooms] = useState(1);
   const [guests, setGuests] = useState<GuestOption[] | null>(null);
   const [picked, setPicked] = useState<string[]>([]);
+  const [createdId, setCreatedId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -62,7 +63,7 @@ export default function AddStayScreen() {
     setSaving(true);
     setError('');
     try {
-      const stay = await one<{ id: string }>(
+      const stay = createdId ? { id: createdId } : await one<{ id: string }>(
         supabase
           .from('accommodations')
           .insert({
@@ -77,6 +78,7 @@ export default function AddStayScreen() {
           .select('id')
           .single()
       );
+      setCreatedId(stay.id);
       if (picked.length > 0) {
         await run(
           supabase.from('accommodation_guests').insert(

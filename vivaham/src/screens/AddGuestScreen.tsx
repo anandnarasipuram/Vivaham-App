@@ -27,6 +27,7 @@ export default function AddGuestScreen() {
   const [invited, setInvited] = useState<string[]>(params.eventId ? [params.eventId] : []);
   const [people, setPeople] = useState(1);
   const [notes, setNotes] = useState('');
+  const [createdId, setCreatedId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -55,7 +56,7 @@ export default function AddGuestScreen() {
     setSaving(true);
     setError('');
     try {
-      const guest = await one<{ id: string }>(
+      const guest = createdId ? { id: createdId } : await one<{ id: string }>(
         supabase
           .from('guests')
           .insert({
@@ -68,6 +69,7 @@ export default function AddGuestScreen() {
           .select('id')
           .single()
       );
+      setCreatedId(guest.id);
       await run(
         supabase.from('guest_events').insert(
           invited.map((eventId) => ({

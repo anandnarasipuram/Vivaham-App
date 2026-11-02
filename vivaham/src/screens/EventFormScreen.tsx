@@ -46,6 +46,7 @@ export default function EventFormScreen() {
   const [decor, setDecor] = useState<Decor[]>([]);
   const [originalDecor, setOriginalDecor] = useState<string[]>([]);
   const [decorDraft, setDecorDraft] = useState('');
+  const [createdId, setCreatedId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [confirming, setConfirming] = useState(false);
@@ -134,7 +135,7 @@ export default function EventFormScreen() {
       expected_guests: guests,
     };
     try {
-      let id = eventId;
+      let id = eventId ?? createdId;
       if (id) {
         await run(supabase.from('events').update(fields).eq('id', id));
       } else {
@@ -146,10 +147,12 @@ export default function EventFormScreen() {
             .single()
         );
         id = created.id;
+        setCreatedId(id);
       }
       const keptVendors = vendors.filter((row) => row.id).map((row) => row.id);
       const removedVendors = originalVendors.filter((vendorId) => !keptVendors.includes(vendorId));
       const newVendors = vendors.filter((row) => !row.id);
+      const canDecor = access('requirements') === 'edit';
       const keptDecor = decor.filter((row) => row.id).map((row) => row.id);
       const removedDecor = originalDecor.filter((decorId) => !keptDecor.includes(decorId));
       const newDecor = decor.filter((row) => !row.id);
@@ -157,22 +160,31 @@ export default function EventFormScreen() {
         await run(supabase.from('event_vendors').delete().in('id', removedVendors));
       }
       if (newVendors.length > 0) {
-        await run(
-          supabase.from('event_vendors').insert(
-            newVendors.map((row) => ({
-              wedding_id: wedding.id,
-              event_id: id,
-              name: row.name,
-              role: row.role || null,
-              phone: row.phone || null,
-            }))
-          )
+        const saved = await rows<{ id: string }>(
+          supabase
+            .from('event_vendors')
+            .insert(
+              newVendors.map((row) => ({
+                wedding_id: wedding.id,
+                event_id: id,
+                name: row.name,
+                role: row.role || null,
+                phone: row.phone || null,
+              }))
+            )
+            .select('id')
         );
+        const savedVendors = [
+          ...vendors.filter((row) => row.id),
+          ...newVendors.map((row, index) => ({ ...row, id: saved[index]?.id })),
+        ];
+        setVendors(savedVendors);
+        setOriginalVendors(savedVendors.map((row) => row.id).filter(Boolean) as string[]);
       }
-      if (removedDecor.length > 0) {
+      if (canDecor && removedDecor.length > 0) {
         await run(supabase.from('requirements').delete().in('id', removedDecor));
       }
-      if (newDecor.length > 0) {
+      if (canDecor && newDecor.length > 0) {
         await run(
           supabase.from('requirements').insert(
             newDecor.map((row) => ({
@@ -346,47 +358,51 @@ export default function EventFormScreen() {
         </Card>
       </View>
 
-      <SectionRule label="DECORATION" />
-      <View style={styles.group}>
-        <Label>Decor items</Label>
-        {decor.length > 0 ? (
-          <View style={styles.wrap}>
-            {decor.map((row) => (
-              <Chip
-                key={row.id ?? row.item}
-                label={row.item}
-                selected
-                onPress={() => undefined}
-                onRemove={() => setDecor(decor.filter((item) => item !== row))}
+      {access('requirements') === 'edit' ? (
+        <>
+          <SectionRule label="DECORATION" />
+          <View style={styles.group}>
+            <Label>Decor items</Label>
+            {decor.length > 0 ? (
+              <View style={styles.wrap}>
+                {decor.map((row) => (
+                  <Chip
+                    key={row.id ?? row.item}
+                    label={row.item}
+                    selected
+                    onPress={() => undefined}
+                    onRemove={() => setDecor(decor.filter((item) => item !== row))}
+                  />
+                ))}
+              </View>
+            ) : null}
+            {suggestions.length > 0 ? (
+              <>
+                <Text style={styles.hint}>Tap to add:</Text>
+                <View style={styles.wrap}>
+                  {suggestions.map((idea) => (
+                    <Pressable key={idea} style={styles.suggest} onPress={() => addDecor(idea)}>
+                      <Text style={styles.suggestText}>{`+ ${idea}`}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </>
+            ) : null}
+            <View style={styles.addRow}>
+              <Input
+                small
+                style={styles.flex}
+                accessibilityLabel="Add a decor item"
+                placeholder="Add your own decor item"
+                value={decorDraft}
+                onChangeText={setDecorDraft}
+                onSubmitEditing={() => addDecor(decorDraft)}
               />
-            ))}
-          </View>
-        ) : null}
-        {suggestions.length > 0 ? (
-          <>
-            <Text style={styles.hint}>Tap to add:</Text>
-            <View style={styles.wrap}>
-              {suggestions.map((idea) => (
-                <Pressable key={idea} style={styles.suggest} onPress={() => addDecor(idea)}>
-                  <Text style={styles.suggestText}>{`+ ${idea}`}</Text>
-                </Pressable>
-              ))}
+              <AddButton onPress={() => addDecor(decorDraft)} />
             </View>
-          </>
-        ) : null}
-        <View style={styles.addRow}>
-          <Input
-            small
-            style={styles.flex}
-            accessibilityLabel="Add a decor item"
-            placeholder="Add your own decor item"
-            value={decorDraft}
-            onChangeText={setDecorDraft}
-            onSubmitEditing={() => addDecor(decorDraft)}
-          />
-          <AddButton onPress={() => addDecor(decorDraft)} />
-        </View>
-      </View>
+          </View>
+        </>
+      ) : null}
 
       <ErrorText>{error}</ErrorText>
       <PrimaryButton

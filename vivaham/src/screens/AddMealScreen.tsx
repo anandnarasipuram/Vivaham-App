@@ -34,6 +34,7 @@ export default function AddMealScreen() {
   const [guests, setGuests] = useState(plan);
   const [dishes, setDishes] = useState<string[]>([]);
   const [dishDraft, setDishDraft] = useState('');
+  const [createdId, setCreatedId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -69,7 +70,7 @@ export default function AddMealScreen() {
     setSaving(true);
     setError('');
     try {
-      const meal = await one<{ id: string }>(
+      const meal = createdId ? { id: createdId } : await one<{ id: string }>(
         supabase
           .from('meals')
           .insert({
@@ -83,6 +84,7 @@ export default function AddMealScreen() {
           .select('id')
           .single()
       );
+      setCreatedId(meal.id);
       if (dishes.length > 0) {
         await run(
           supabase.from('dishes').insert(dishes.map((dish) => ({ wedding_id: wedding.id, meal_id: meal.id, name: dish })))
