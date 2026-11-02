@@ -7,6 +7,7 @@ import Icon, { IconName } from '../components/Icon';
 import HomeScreen from '../screens/HomeScreen';
 import PlaceholderScreen from '../screens/PlaceholderScreen';
 import { colors, fonts } from '../theme';
+import BudgetStack from './BudgetStack';
 import EventsStack from './EventsStack';
 import GuestsStack from './GuestsStack';
 import RequirementsStack from './RequirementsStack';
@@ -31,7 +32,7 @@ const TABS: { name: string; label: string; icon: IconName; component: ComponentT
 
 const EXTRA_SCREENS: { name: string; component: ComponentType }[] = [
   { name: 'Requirements', component: RequirementsStack },
-  { name: 'Budget', component: PlaceholderScreen },
+  { name: 'Budget', component: BudgetStack },
   { name: 'Food', component: PlaceholderScreen },
   { name: 'Stays', component: StaysStack },
 ];
