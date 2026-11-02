@@ -81,10 +81,16 @@ async function loadSummary(can: (module: string) => boolean): Promise<Summary> {
 }
 
 export default function HomeScreen() {
-  const { wedding, loading, error, access } = useWedding();
+  const { wedding, loading, error, access, reload } = useWedding();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<{ navigate: (screen: string) => void }>();
   const [summary, setSummary] = useState<Summary | null>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      reload();
+    }, [reload])
+  );
 
   useFocusEffect(
     useCallback(() => {

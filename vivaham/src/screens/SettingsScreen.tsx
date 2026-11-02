@@ -98,6 +98,7 @@ export default function SettingsScreen() {
           .eq('user_id', wedding.userId)
       );
       await reload();
+      await reloadLists();
       setNotice('Your name is saved.');
     } catch (failure) {
       setActionError(errorText(failure));

@@ -6,6 +6,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Icon, { IconName } from '../components/Icon';
 import HomeScreen from '../screens/HomeScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import { useWedding } from '../lib/wedding';
 import { colors, fonts } from '../theme';
 import BudgetStack from './BudgetStack';
 import EventsStack from './EventsStack';
@@ -25,12 +26,12 @@ const theme = {
   colors: { ...DefaultTheme.colors, background: colors.cream },
 };
 
-const TABS: { name: string; label: string; icon: IconName; component: ComponentType }[] = [
+const TABS: { name: string; label: string; icon: IconName; component: ComponentType; module?: string }[] = [
   { name: 'Home', label: 'Home', icon: 'home', component: HomeScreen },
-  { name: 'Events', label: 'Events', icon: 'calendar', component: EventsStack },
-  { name: 'Guests', label: 'Guests', icon: 'guests', component: GuestsStack },
-  { name: 'Shopping', label: 'Shopping', icon: 'bag', component: ShoppingStack },
-  { name: 'Todo', label: 'To-do', icon: 'check', component: TodoStack },
+  { name: 'Events', label: 'Events', icon: 'calendar', component: EventsStack, module: 'events' },
+  { name: 'Guests', label: 'Guests', icon: 'guests', component: GuestsStack, module: 'guests' },
+  { name: 'Shopping', label: 'Shopping', icon: 'bag', component: ShoppingStack, module: 'shopping' },
+  { name: 'Todo', label: 'To-do', icon: 'check', component: TodoStack, module: 'todo' },
 ];
 
 const EXTRA_SCREENS: { name: string; component: ComponentType }[] = [
@@ -43,6 +44,8 @@ const EXTRA_SCREENS: { name: string; component: ComponentType }[] = [
 ];
 
 function Tabs() {
+  const { access } = useWedding();
+  const tabs = TABS.filter((item) => !item.module || access(item.module) !== 'none');
   return (
     <Tab.Navigator
       screenOptions={{
@@ -56,7 +59,7 @@ function Tabs() {
         },
       }}
     >
-      {TABS.map((item) => (
+      {tabs.map((item) => (
         <Tab.Screen
           key={item.name}
           name={item.name}
