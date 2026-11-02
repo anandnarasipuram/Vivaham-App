@@ -8,6 +8,7 @@ import HomeScreen from '../screens/HomeScreen';
 import PlaceholderScreen from '../screens/PlaceholderScreen';
 import { colors, fonts } from '../theme';
 import EventsStack from './EventsStack';
+import RequirementsStack from './RequirementsStack';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -25,7 +26,12 @@ const TABS: { name: string; label: string; icon: IconName; component: ComponentT
   { name: 'Todo', label: 'To-do', icon: 'check', component: PlaceholderScreen },
 ];
 
-const EXTRA_SCREENS = ['Requirements', 'Budget', 'Food', 'Stays'];
+const EXTRA_SCREENS: { name: string; component: ComponentType }[] = [
+  { name: 'Requirements', component: RequirementsStack },
+  { name: 'Budget', component: PlaceholderScreen },
+  { name: 'Food', component: PlaceholderScreen },
+  { name: 'Stays', component: PlaceholderScreen },
+];
 
 function Tabs() {
   return (
@@ -71,8 +77,8 @@ export default function AppNavigator() {
     <NavigationContainer theme={theme}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Main" component={Tabs} />
-        {EXTRA_SCREENS.map((name) => (
-          <Stack.Screen key={name} name={name} component={PlaceholderScreen} />
+        {EXTRA_SCREENS.map((item) => (
+          <Stack.Screen key={item.name} name={item.name} component={item.component} />
         ))}
       </Stack.Navigator>
     </NavigationContainer>
