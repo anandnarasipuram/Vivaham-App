@@ -69,11 +69,8 @@ export function vehicleLines(vehicles: Vehicle[]) {
 }
 
 export function whatsappNumber(phone: string | null) {
-  const digits = (phone ?? '').replace(/\D/g, '');
-  if (digits.length === 10) {
-    return `${DEFAULT_COUNTRY_CODE}${digits}`;
-  }
-  return digits.replace(/^0+/, '');
+  const digits = (phone ?? '').replace(/\D/g, '').replace(/^0+/, '');
+  return digits.length === 10 ? `${DEFAULT_COUNTRY_CODE}${digits}` : digits;
 }
 
 export function openWhatsApp(text: string, phone?: string | null) {

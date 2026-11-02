@@ -1,4 +1,5 @@
 import { rows } from './data';
+import { dayDate, timeLabel } from './format';
 import { supabase } from './supabase';
 
 export type GuestOption = { id: string; name: string; people: number };
@@ -20,4 +21,11 @@ export function mapsLink(mapsUrl: string | null, address: string | null, name: s
     return mapsUrl;
   }
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address || name)}`;
+}
+
+export function stayWhen(date: string | null, time: string | null) {
+  if (!date) {
+    return 'Not set';
+  }
+  return [dayDate(date), timeLabel(time)].filter(Boolean).join(' · ');
 }

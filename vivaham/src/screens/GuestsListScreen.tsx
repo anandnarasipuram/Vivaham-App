@@ -97,7 +97,17 @@ export default function GuestsListScreen() {
   const header = (
     <View style={styles.header}>
       <BackPill label="Home" onPress={() => goHome(navigation)} />
-      <Title>Guests</Title>
+      <View style={styles.titleRow}>
+        <Title>Guests</Title>
+        {canSee ? (
+          <PrimaryButton
+            size="small"
+            color={colors.whatsapp}
+            label="Send messages"
+            onPress={() => navigation.navigate('SendMessages')}
+          />
+        ) : null}
+      </View>
       {!canSee ? <Note>You don’t have access to Guests.</Note> : null}
       <ErrorText>{error || updateError}</ErrorText>
       {canSee && !data && !error ? <Note>Loading guests…</Note> : null}
@@ -205,6 +215,7 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.cream },
   content: { paddingTop: 12, paddingHorizontal: 20, paddingBottom: 32 },
   header: { gap: 18, marginBottom: 12 },
+  titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
   section: { gap: 12 },
   h2: { fontFamily: fonts.bold, fontSize: 20, color: colors.ink },
   stats: { flexDirection: 'row', gap: 8 },

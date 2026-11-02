@@ -8,8 +8,8 @@ import SelectRow from '../components/SelectRow';
 import Stepper from '../components/Stepper';
 import { Avatar, Badge, Card, EmptyBox, ErrorText, Note, Title } from '../components/ui';
 import { errorText, rows, run, useFocusData } from '../lib/data';
-import { dayDate, daysBetween, initial, plural, timeLabel } from '../lib/format';
-import { fetchGuestOptions, GuestOption, mapsLink } from '../lib/stays';
+import { dayDate, daysBetween, initial, plural } from '../lib/format';
+import { fetchGuestOptions, GuestOption, mapsLink, stayWhen } from '../lib/stays';
 import { supabase } from '../lib/supabase';
 import { useWedding } from '../lib/wedding';
 import { goHome, useNav } from '../navigation/nav';
@@ -30,13 +30,6 @@ type Stay = {
 };
 
 type Placement = { id: string; accommodation_id: string; guest_id: string; people: number | null };
-
-function when(date: string | null, time: string | null) {
-  if (!date) {
-    return 'Not set';
-  }
-  return [dayDate(date), timeLabel(time)].filter(Boolean).join(' · ');
-}
 
 function nights(stay: Stay) {
   return stay.checkin_date && stay.checkout_date ? Math.max(0, daysBetween(stay.checkin_date, stay.checkout_date)) : 0;
@@ -96,8 +89,8 @@ export default function StaysScreen() {
       `Stay for ${wedding?.name ?? 'the wedding'}`,
       stay.name,
       stay.address,
-      `Check-in: ${when(stay.checkin_date, stay.checkin_time)}`,
-      `Check-out: ${when(stay.checkout_date, stay.checkout_time)}`,
+      `Check-in: ${stayWhen(stay.checkin_date, stay.checkin_time)}`,
+      `Check-out: ${stayWhen(stay.checkout_date, stay.checkout_time)}`,
     ]
       .filter(Boolean)
       .join('\n');
@@ -216,11 +209,11 @@ export default function StaysScreen() {
             <View style={styles.dates}>
               <View style={styles.flex}>
                 <Text style={styles.dateLabel}>Check-in</Text>
-                <Text style={styles.dateValue}>{when(stay.checkin_date, stay.checkin_time)}</Text>
+                <Text style={styles.dateValue}>{stayWhen(stay.checkin_date, stay.checkin_time)}</Text>
               </View>
               <View style={styles.flex}>
                 <Text style={styles.dateLabel}>Check-out</Text>
-                <Text style={styles.dateValue}>{when(stay.checkout_date, stay.checkout_time)}</Text>
+                <Text style={styles.dateValue}>{stayWhen(stay.checkout_date, stay.checkout_time)}</Text>
               </View>
             </View>
             <View style={styles.between}>
