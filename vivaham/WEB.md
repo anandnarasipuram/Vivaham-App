@@ -66,7 +66,7 @@ Audit all screens and fix:
 2. Terminal in the project: `npx wrangler login` (opens the browser to allow access).
 3. `npm run build:web`
 4. `npx wrangler deploy` (uses `wrangler.jsonc`). Open the URL it prints and check the app. Or connect the GitHub repository in the Cloudflare dashboard with root directory `vivaham`, build command `npm run build:web` and deploy command `npx wrangler deploy` (see DEPLOY_WEB.md).
-5. Put the production URL in `.env` as `EXPO_PUBLIC_APP_URL=https://vivaham.<your-subdomain>.workers.dev`, then rebuild and redeploy (the value is baked in at build time).
+5. Put the production URL in `.env` as `EXPO_PUBLIC_APP_URL=https://vivaham-app.<your-subdomain>.workers.dev`, then rebuild and redeploy (the value is baked in at build time).
 6. Supabase > Authentication > URL Configuration: set Site URL and add the same URL to Redirect URLs.
 7. Open the URL on iPhone Safari and Android Chrome. iPhone: Share > Add to Home Screen. Android: menu > Install app.
 8. Redeploy every time the code changes (steps 3 and 4).
