@@ -1,4 +1,4 @@
-import { fill, INVITATION_MESSAGE, STAY_MESSAGE, vehicleLines, whatsappNumber } from '../messages';
+import { fill, INVITATION_MESSAGE, joinMessage, STAY_MESSAGE, vehicleLines, whatsappNumber } from '../messages';
 
 describe('fill', () => {
   it('fills placeholders and drops lines whose values are empty', () => {
@@ -88,5 +88,15 @@ describe('vehicleLines', () => {
     expect(text).toBe(
       '🚗 Innova · AP 09 AB 1234\nDriver: Ravi 98765 43210\nAvailable: 22 Apr – 26 Apr\nNotes: AC\n\n🚗 Tempo'
     );
+  });
+});
+
+describe('joinMessage', () => {
+  it('includes the join link and the code', () => {
+    const text = joinMessage('AB12CD34', 'Akhil’s wedding');
+    expect(text).toContain('/join/AB12CD34');
+    expect(text).toContain('https://');
+    expect(text).toContain('Invite code (if asked): AB12CD34');
+    expect(text.startsWith("You're invited to help with Akhil’s wedding on Vivaham")).toBe(true);
   });
 });
