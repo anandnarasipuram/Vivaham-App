@@ -106,6 +106,10 @@ async function bootRecovery() {
   }
 }
 
+// old V1 invite links (/join/CODE) open the Join screen
+const oldJoin = location.pathname.match(/^\/join\/([A-Za-z0-9-]+)\/?$/);
+if (oldJoin) history.replaceState(null, '', '/#/join?code=' + encodeURIComponent(oldJoin[1]));
+
 import('./screens/index.js').then(async () => {
   document.documentElement.lang = getLang();
   if (configured) await bootRecovery();

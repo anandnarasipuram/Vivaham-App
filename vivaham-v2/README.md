@@ -26,10 +26,19 @@ npm install
 npm run dev               # opens http://localhost:5173
 ```
 
-### 4. Put it online (Cloudflare Pages)
-- Connect the repo. Build command `npm run build`, output folder `dist`.
-- Add the two `VITE_...` variables under Settings -> Environment variables.
-- Add the new address to Supabase -> Authentication -> URL Configuration (step 2).
+### 4. Put it online (Cloudflare, test address first)
+V2 runs at its own address while V1 keeps running. Cloudflare now builds these as Workers; `wrangler.jsonc` in this folder is the config.
+1. Cloudflare dashboard -> **Workers & Pages** -> **Create** -> **Import a repository** -> pick `Vivaham-App` (same repository as V1).
+2. Project name: `vivaham-v2`. Under **Build** set:
+   - Root directory: `vivaham-v2`
+   - Build command: `npm run build`
+   - Deploy command: `npx wrangler deploy`
+3. Under **Variables** (build variables) add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` (the publishable key, never the secret key).
+4. Push the code (`git push`) and start the build. The address looks like `https://vivaham-v2.<your-subdomain>.workers.dev`.
+5. Supabase -> **Authentication -> URL Configuration** -> add that address (with `/**` at the end) to Redirect URLs. Keep the V1 address there too while both run.
+6. Invite links are made from the address the app is opened on, so no extra setting is needed for them.
+
+**Switching the main address to V2 later:** in the existing `vivaham-app` Cloudflare project change Root directory to `vivaham-v2` and Build command to `npm run build`, add the two `VITE_...` variables, and rebuild. Old V1 links like `/join/CODE` open V2's Join screen (V1 codes themselves do not work in V2; send new invites). To go back, set Root directory to `vivaham` and Build command to `npm run build:web` again.
 
 ## Tests
 `npm test` runs three checks: the SQL rules (roles, prices, invites, last-admin), a frontend-vs-backend parity check
