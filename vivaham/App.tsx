@@ -13,6 +13,7 @@ import {
 import Screen from './src/components/Screen';
 import { Note } from './src/components/ui';
 import { clearWebPath, linkParams } from './src/lib/links';
+import { clearPendingInvite, loadPendingInvite, savePendingInvite } from './src/lib/pendingInvite';
 import { supabase } from './src/lib/supabase';
 import { useWedding, WeddingProvider } from './src/lib/wedding';
 import AppNavigator from './src/navigation/AppNavigator';
@@ -76,6 +77,7 @@ export default function App() {
       if (join) {
         setJoinCode(join[1].toUpperCase());
         setView('join');
+        savePendingInvite(join[1].toUpperCase());
         return;
       }
       const params = linkParams(url);
@@ -95,7 +97,16 @@ export default function App() {
           });
       }
     }
-    Linking.getInitialURL().then(handle);
+    Linking.getInitialURL().then(async (url) => {
+      handle(url);
+      if (!url || !/join\//.test(url)) {
+        const pending = await loadPendingInvite();
+        if (pending) {
+          setJoinCode(pending);
+          setView('join');
+        }
+      }
+    });
     const subscription = Linking.addEventListener('url', ({ url }) => handle(url));
     return () => subscription.remove();
   }, []);
@@ -126,10 +137,12 @@ export default function App() {
         key={joinCode}
         initialCode={joinCode}
         onDone={() => {
+          clearPendingInvite();
           clearWebPath();
           setView('login');
         }}
         onCancel={() => {
+          clearPendingInvite();
           clearWebPath();
           setView('login');
         }}

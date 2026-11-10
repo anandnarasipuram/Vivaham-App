@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { PrimaryButton } from '../components/Buttons';
+import { LinkButton, PrimaryButton } from '../components/Buttons';
 import Field, { PasswordField } from '../components/Field';
 import Icon from '../components/Icon';
 import Screen from '../components/Screen';
@@ -21,7 +21,8 @@ export async function acceptInvite(code: string, name: string) {
 }
 
 export default function JoinScreen({ initialCode = '', onDone, onCancel }: Props) {
-  const [step, setStep] = useState(1);
+  const linked = cleanCode(initialCode).length === 8;
+  const [step, setStep] = useState(linked ? 2 : 1);
   const [code, setCode] = useState(cleanCode(initialCode));
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -33,7 +34,14 @@ export default function JoinScreen({ initialCode = '', onDone, onCancel }: Props
   const [notice, setNotice] = useState('');
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setSignedInAs(data.session?.user.email ?? ''));
+    supabase.auth.getSession().then(({ data }) => {
+      const user = data.session?.user;
+      setSignedInAs(user?.email ?? '');
+      const saved = user?.user_metadata?.display_name;
+      if (typeof saved === 'string' && saved.trim()) {
+        setName((current) => current || saved.trim());
+      }
+    });
   }, []);
 
   function next() {
@@ -78,7 +86,7 @@ export default function JoinScreen({ initialCode = '', onDone, onCancel }: Props
           return;
         }
         if (!data.session) {
-          setNotice('Check your email to confirm your account, then log in and enter the code again.');
+          setNotice('Check your email to confirm your account, then open the invite link again.');
           setBusy(false);
           return;
         }
@@ -108,10 +116,14 @@ export default function JoinScreen({ initialCode = '', onDone, onCancel }: Props
 
   return (
     <Screen
-      back={step === 1 ? { label: signedInAs ? 'Cancel' : 'Log in', onPress: onCancel } : { label: 'Back', onPress: () => setStep(1) }}
+      back={
+        step === 1 || linked
+          ? { label: signedInAs ? 'Cancel' : 'Log in', onPress: onCancel }
+          : { label: 'Back', onPress: () => setStep(1) }
+      }
       gap={22}
     >
-      <Text style={styles.kicker}>{`STEP ${step} OF 3`}</Text>
+      <Text style={styles.kicker}>{linked ? 'JOIN A WEDDING' : `STEP ${step} OF 3`}</Text>
       {step === 1 ? (
         <>
           <View style={styles.head}>
@@ -138,6 +150,10 @@ export default function JoinScreen({ initialCode = '', onDone, onCancel }: Props
             <Text style={styles.body}>
               {signedInAs ? `You are logged in as ${signedInAs}.` : 'Create your account, or log in if you already have one.'}
             </Text>
+          </View>
+          <View style={styles.codeRow}>
+            <Text style={styles.codeNote}>{`Invite code ${cleanCode(code)} ✓`}</Text>
+            <LinkButton label="Change" onPress={() => setStep(1)} />
           </View>
           <Field label="Your name" placeholder="e.g. Soundarya" autoCapitalize="words" value={name} onChangeText={setName} />
           {!signedInAs ? (
@@ -175,6 +191,8 @@ const styles = StyleSheet.create({
   title: { fontFamily: fonts.bold, fontSize: 28, color: colors.ink },
   body: { fontFamily: fonts.medium, fontSize: 16, lineHeight: 24, color: colors.brownInk },
   codeInput: { fontFamily: fonts.extrabold, fontSize: 22, letterSpacing: 4 },
+  codeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  codeNote: { fontFamily: fonts.bold, fontSize: 15, color: colors.green },
   notice: { fontFamily: fonts.bold, fontSize: 15, lineHeight: 22, color: colors.green },
   badge: {
     width: 64,

@@ -17,7 +17,7 @@ export const TRANSPORT_MESSAGE =
 export const TRANSPORT_GROUP_MESSAGE = 'Vehicles for {wedding} 🚗\n{vehicles}\nPlease contact the driver directly for pickups.';
 
 export const JOIN_LINK_MESSAGE =
-  "You're invited to help with {wedding} on Vivaham 🎉\n1. Open: {link}\n2. Sign up with your email\n3. On iPhone: Share > Add to Home Screen. On Android: menu > Install app.\nInvite code (if asked): {code}";
+  "You're invited to help with {wedding} on Vivaham 🎉\n1. Open: {link}\n2. Enter your name, email and a password, then tap Join the wedding (the code is filled in for you)\n3. After joining: on iPhone, Share > Add to Home Screen. On Android, menu > Install app.\nInvite code (if asked): {code}";
 
 export const JOIN_MESSAGE =
   "Join our wedding planner on Vivaham 💍\n1. Open the app\n2. Tap 'Have an invite code?'\n3. Enter code {code}";
