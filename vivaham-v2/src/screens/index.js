@@ -1,0 +1,14 @@
+import { register } from '../main.js';
+import * as home from './home.js';
+import * as events from './events.js';
+import * as shopping from './shopping.js';
+import * as budget from './budget.js';
+import * as stays from './stays.js';
+import * as guests from './guests.js';
+import * as food from './food.js';
+import * as transport from './transport.js';
+import * as vendors from './vendors.js';
+import * as materials from './materials.js';
+import * as tasks from './tasks.js';
+import * as profile from './profile.js';
+Object.entries({ home, events, shopping, budget, stays, guests, food, transport, vendors, materials, tasks, profile }).forEach(([k, m]) => register(k, m));

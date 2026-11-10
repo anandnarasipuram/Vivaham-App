@@ -1,0 +1,9 @@
+{
+  "name": "Vivaham · Wedding Organiser",
+  "short_name": "Vivaham",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFFDF7",
+  "theme_color": "#A3122A",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}
