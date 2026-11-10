@@ -100,7 +100,7 @@ export function parseAmount(text: string) {
 }
 
 export function weddingTag(name: string) {
-  const base = name.replace(/[’']s wedding$/i, '').trim();
+  const base = name.replace(/\s*wedding$/i, '').replace(/[’']s$/i, '').trim();
   return `ॐ · ${base ? `${base.toUpperCase()}’S ` : ''}VIVAHAM`;
 }
 

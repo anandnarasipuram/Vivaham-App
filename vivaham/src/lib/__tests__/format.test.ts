@@ -104,5 +104,7 @@ describe('weddingTag', () => {
     expect(weddingTag('Akhil’s wedding')).toBe('ॐ · AKHIL’S VIVAHAM');
     expect(weddingTag("Akhil's wedding")).toBe('ॐ · AKHIL’S VIVAHAM');
     expect(weddingTag('')).toBe('ॐ · VIVAHAM');
+    expect(weddingTag("Akhil's")).toBe('ॐ · AKHIL’S VIVAHAM');
+    expect(weddingTag('Akhil')).toBe('ॐ · AKHIL’S VIVAHAM');
   });
 });

@@ -206,7 +206,7 @@ export default function HomeScreen() {
                   <Icon name={tile.icon} color={tile.ink} size={22} />
                 </View>
                 <View style={styles.tileText}>
-                  <Text style={styles.tileTitle}>{tile.title}</Text>
+                  <Text style={styles.tileTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{tile.title}</Text>
                   <Text style={styles.tileSubtitle}>{tile.subtitle}</Text>
                 </View>
               </Pressable>
