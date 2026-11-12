@@ -32,7 +32,7 @@ main{padding:16px}
 .nav a{flex:1;text-align:center;padding:9px 0 8px;font-size:12px;font-weight:600;color:var(--mute);text-decoration:none}
 .nav a .i{display:block;font-size:20px}
 .nav a.on{color:var(--maroon)}
-label.f{display:block;margin:0 0 14px}
+label.f,div.f{display:block;margin:0 0 14px}
 label.f>span,.lbl{display:block;font-size:13px;font-weight:700;margin-bottom:6px;color:var(--ink)}
 .inp{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;background:#fff;outline:none}
 .inp:focus{border-color:var(--maroon)}
@@ -78,3 +78,9 @@ textarea.inp{min-height:76px;resize:vertical}
 .bar>i{display:block;height:100%;background:var(--maroon)}
 a.act{color:var(--maroon);font-weight:700;text-decoration:none;font-size:14px}
 .red{color:var(--danger)}
+.phone .cc{width:auto;flex:none;padding:12px 8px}
+.phone .inp:not(.cc){flex:1;min-width:0}
+.otp{letter-spacing:10px;font-size:26px;text-align:center;font-weight:700}
+.irow{border:1.5px solid var(--line);border-radius:14px;padding:10px;margin-bottom:10px;background:var(--cream);display:grid;gap:8px}
+.irow .row .inp{flex:1}
+.link:disabled{color:var(--mute);text-decoration:none}

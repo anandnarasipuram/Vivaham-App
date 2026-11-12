@@ -11,6 +11,9 @@ const te = {
   'Total budget': 'మొత్తం బడ్జెట్', 'Coming': 'వస్తున్నారు', 'Not coming': 'రావడం లేదు', 'Pending': 'పెండింగ్',
   'days to go': 'రోజులు మిగిలి ఉన్నాయి', 'Bride side': 'వధువు వైపు', 'Groom side': 'వరుడు వైపు',
   'Family': 'కుటుంబం', 'Helper': 'సహాయకులు', 'Admin': 'అడ్మిన్', 'Invite code': 'ఆహ్వాన కోడ్',
+  'Mobile number': 'మొబైల్ నంబర్', 'Send code': 'కోడ్ పంపండి', 'Code': 'కోడ్', 'Send again': 'మళ్ళీ పంపండి', 'Change number': 'నంబర్ మార్చండి',
+  'Continue': 'కొనసాగండి', 'Welcome': 'స్వాగతం', 'Invite your family': 'మీ కుటుంబాన్ని ఆహ్వానించండి', 'Add person': 'వ్యక్తిని చేర్చండి',
+  'Go to Home': 'హోమ్‌కు వెళ్ళండి', 'Role': 'పాత్ర',
   'Join a wedding': 'పెళ్లిలో చేరండి', 'Create wedding': 'పెళ్లి సృష్టించండి', 'Open': 'తెరవండి', 'Done': 'అయింది',
 };
 let lang = localStorage.getItem('lang') || 'en';

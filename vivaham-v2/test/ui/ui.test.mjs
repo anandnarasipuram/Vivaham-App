@@ -29,15 +29,28 @@ const fab = async () => click($('.fab'), 300);
 const toastErr = () => $('.toast.err')?.textContent;
 const sql = async (q, p) => (await db.query(q, p)).rows;
 const mk = async (n) => (await sql(`insert into auth.users(email, raw_user_meta_data) values ($1,$2) returning id`, [n + '@x.com', JSON.stringify({ name: n })]))[0].id;
-const reset = (uid) => { Object.assign(S, { user: null, profile: null, wedding: null, weddings: [], members: [], events: [] }); state.uid = uid; localStorage.clear(); };
+const reset = (uid) => { Object.assign(S, { user: null, profile: null, wedding: null, weddings: [], members: [], events: [], claimed: false }); state.uid = uid; localStorage.clear(); };
 const noErr = (m) => { ok(!toastErr() && !errs.length, `${m} -> ${toastErr() || errs.join(' | ')}`); errs.length = 0; document.querySelectorAll('.toast').forEach((t) => t.remove()); };
 
 // ---------- admin ----------
 const A = await mk('Anand'), H = await mk('Helper');
 reset(A);
-await nav('#/home'); ce('DBG', location.hash, text().slice(0,200), errs, $('.toast')?.textContent, state.log); ok(location.hash === '#/onboard', 'redirect to onboarding: ' + location.hash);
+await nav('#/home'); ok(location.hash === '#/onboard', 'redirect to onboarding: ' + location.hash);
 const inputs = $$('input.inp'); setv(inputs[0], 'Akhil & Sree'); setv(inputs[1], new Date(Date.now() + 60 * 864e5).toISOString().slice(0, 10));
+// invite two people right here, on the same screen
+ok(/Invite your family/.test(text()) && $$('.irow').length === 1, 'onboarding has the invite block');
+setv($('.irow input.inp'), 'Lakshmi'); setv($('.irow input[type=tel]'), '98765 00001');
+await click($$('button').find((b) => b.textContent === '+ Add person'), 50);
+setv($$('.irow')[1].querySelector('input.inp'), 'Gopi'); setv($$('.irow')[1].querySelector('input[type=tel]'), '12345');
+await click($$('button').find((b) => b.textContent === 'Create wedding'), 400);
+ok(/check the mobile number for Gopi/.test(toastErr() || ''), 'bad number stops before anything is created: ' + toastErr()); errs.length = 0; $$('.toast').forEach((x) => x.remove());
+ok((await sql(`select count(*)::int c from vivaham.weddings`))[0].c === 0, 'no wedding created with a bad number');
+setv($$('.irow')[1].querySelector('input[type=tel]'), '09876500002'); $$('.irow')[1].querySelector('select:not(.cc)').value = 'helper';
 await click($$('button').find((b) => b.textContent === 'Create wedding'), 800); await wait(500);
+ok(/Wedding created/.test(text()) && /Lakshmi/.test(text()) && /Gopi/.test(text()), 'after creating: list of people to tell'); noErr('invited');
+ok($$('a').filter((a) => /wa\.me\/91987650000[12]\?text=/.test(a.href)).length === 2, 'one WhatsApp button per invited person');
+ok((await sql(`select phone, role from vivaham.phone_invites order by phone`)).map((r) => r.phone + r.role).join() === '919876500001family,919876500002helper', 'invites saved with number + role');
+await click($$('button').find((b) => b.textContent === 'Go to Home'), 600);
 ok(location.hash === '#/home' && /days to go/.test(text()) && /Akhil & Sree/.test(text()), 'wedding created, home shows countdown'); noErr('home');
 ok($$('.tile').length === 8, '8 tiles for admin: ' + $$('.tile').length);
 
@@ -100,6 +113,15 @@ const helperCode = (await sql(`select code from vivaham.invites where role='help
 const nm = $$('.card').find((c) => /Your name/.test(c.textContent)); await click(nm, 200); fill('Your name', 'Anand N'); await save(); noErr('rename'); ok(/Anand N/.test(text()), 'name changed');
 await click($$('button').find((b) => b.textContent === 'తెలుగు'), 500); ok(/ప్రొఫైల్/.test(text()), 'telugu switch'); await click($$('button').find((b) => b.textContent === 'English'), 500);
 await click($$('button.btn.sm').find((b) => b.textContent === '+ Add'), 200); fill('Name', 'Aunt'); await save(); noErr('add name only'); ok(/Aunt/.test(text()) && /name only/.test(text()), 'name-only member');
+ok(/Lakshmi · invited/.test(text()) && /Gopi · invited/.test(text()), 'invited people show as invited');
+// invite one more by number from Profile
+await click($$('button.btn.sm').find((b) => b.textContent === '+ Add'), 200); fill('Name', 'Ravi'); setv($('.sheet input[type=tel]'), '9876500003'); await save();
+ok(/Invited/.test($('.sheet')?.textContent || '') && /wa\.me\/919876500003/.test($('.sheet a')?.href || ''), 'after inviting: WhatsApp button'); noErr('invite from profile');
+await click($$('.sheet button').find((b) => b.textContent === 'Done'), 300); ok(/Ravi · invited/.test(text()), 'Ravi listed as invited');
+// cancel Ravi's invite again
+await click($$('.card').find((c) => /Ravi/.test(c.textContent)), 200); ok(/has not logged in yet/.test($('.sheet').textContent), 'member sheet shows the waiting invite');
+await click($$('.sheet button').find((b) => b.textContent === 'Remove invite'), 200); await click($$('.sheet button.danger').find((b) => b.textContent === 'Remove invite' && b.closest('.ov') === $$('.ov').at(-1)), 700);
+ok((await sql(`select count(*)::int c from vivaham.phone_invites where name='Ravi'`))[0].c === 0 && /Ravi · name only/.test(text()), 'invite removed, name stays'); noErr('remove invite');
 
 // ---------- helper ----------
 reset(H);
@@ -112,5 +134,31 @@ await click($$('.chk')[0], 400); ok((await sql(`select done from vivaham.tasks`)
 await nav('#/shopping'); ok(!/₹/.test(text()), 'helper sees no prices'); ok($$('.chk').every((c) => c.disabled), 'helper cannot tick shopping');
 await nav('#/profile'); ok(!/Invite code/.test(text()), 'helper has no invite section'); noErr('helper profile');
 for (const r of ['events', 'stays', 'guests', 'food', 'transport', 'vendors', 'materials']) { await nav('#/' + r); noErr('helper ' + r); }
+
+// ---------- mobile-number login ----------
+const phoneLogin = async (num, code = '123456') => {
+  reset(null); await nav('#/login');
+  setv($('input[type=tel]'), num); await click($$('button').find((b) => b.textContent === 'Send code'), 300);
+  setv($('input[name=code]'), code); await click($$('button').find((b) => b.textContent === 'Log in'), 900); await wait(400);
+};
+reset(null); await nav('#/home'); ok(location.hash === '#/login' && $('input[type=tel]') && !$('input[type=password]'), 'logged out: mobile number login, no password');
+setv($('input[type=tel]'), '123'); await click($$('button').find((b) => b.textContent === 'Send code'), 200);
+ok(/check the mobile number/.test(toastErr() || '') && !state.sent.length, 'bad number: no code sent'); errs.length = 0;
+// invited number: straight into the wedding, no name question, no code to type in
+await phoneLogin('98765 00001', '000000'); ok(/wrong or too old/.test(toastErr() || '') && location.hash === '#/login', 'wrong code refused'); errs.length = 0;
+ok(state.sent.at(-1).phone === '+919876500001', 'code sent to the full number: ' + state.sent.at(-1).phone);
+setv($('input[name=code]'), '123456'); await click($$('button').find((b) => b.textContent === 'Log in'), 900); await wait(400);
+ok(location.hash === '#/home' && /Akhil & Sree/.test(text()), 'invited number lands in the wedding: ' + location.hash); noErr('invited login');
+ok($$('.tile').length === 8, 'invited as family: sees Budget');
+await nav('#/profile'); ok(/Lakshmi/.test($$('.card')[0].textContent) && !/Invite code/.test(text()), 'name comes from the invite; family has no invite section'); noErr('invited profile');
+// invited as helper
+await phoneLogin('9876500002'); ok(location.hash === '#/home' && $$('.tile').length === 7, 'helper invited by number: 7 tiles'); noErr('helper by number');
+// a new number nobody invited: asked for a name, then onboarding
+await phoneLogin('+49 151 23456789'); ok(/What should the family call you/.test(text()), 'new number is asked for a name'); noErr('name step');
+setv($('input[name=name]'), 'Meena'); await click($$('button').find((b) => b.textContent === 'Continue'), 700); await wait(300);
+ok(location.hash === '#/onboard' && /Welcome, Meena/.test(text()), 'then onboarding: ' + location.hash); noErr('new number onboarding');
+ok(state.sent.at(-1).phone === '+4915123456789', 'foreign number keeps its country code');
+// email login is still there for old accounts
+reset(null); await nav('#/email'); ok($('input[type=email]') && $('input[type=password]'), 'email login still reachable');
 
 console.log = console.log; ce(`\n${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);

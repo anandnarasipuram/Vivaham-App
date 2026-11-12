@@ -12,7 +12,7 @@ Both use the same Supabase project and the same logins. V1 keeps its tables in t
 How to set up and deploy V2: see `vivaham-v2/README.md`. V1: `vivaham/DEPLOY_WEB.md`.
 
 Plan:
-1. Run `vivaham-v2/supabase/migrations/20261110_vivaham_v2.sql` in Supabase and expose the `vivaham` schema.
+1. Run the files in `vivaham-v2/supabase/migrations/` in Supabase, in file-name order, and expose the `vivaham` schema.
 2. Deploy V2 to its own address, test it with the family.
 3. When happy, point the main address to `vivaham-v2` (steps in `vivaham-v2/README.md`). Rolling back is the same setting in reverse.
 4. Months later, once V2 has proven itself, remove V1's tables and the `vivaham/` folder (the `v1.0` tag keeps it recoverable).

@@ -6,15 +6,15 @@ export const BUCKET = 'vivaham';
 export const db = new PGlite({ parsers: { 1082: (v) => v, 20: (v) => Number(v), 1184: (v) => new Date(v).toISOString() } });
 const F = (n) => new URL(`../../${n}`, import.meta.url);
 await db.exec(`create schema auth; create schema storage;
-create table auth.users (id uuid primary key default gen_random_uuid(), email text, raw_user_meta_data jsonb default '{}');
+create table auth.users (id uuid primary key default gen_random_uuid(), email text, phone text, phone_confirmed_at timestamptz, raw_user_meta_data jsonb default '{}');
 create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('app.uid', true), '')::uuid $$;
 create table storage.buckets (id text primary key, name text, public boolean, file_size_limit bigint, allowed_mime_types text[]);
 create table storage.objects (id uuid, bucket_id text, name text); alter table storage.objects enable row level security;
 create role anon nologin; create role authenticated nologin;
 grant usage on schema auth, storage to anon, authenticated; grant execute on function auth.uid() to anon, authenticated;`);
-await db.exec(fs.readFileSync(F('supabase/migrations/20261110_vivaham_v2.sql'), 'utf8'));
+for (const f of fs.readdirSync(F('supabase/migrations/')).filter((x) => x.endsWith('.sql')).sort()) await db.exec(fs.readFileSync(F('supabase/migrations/' + f), 'utf8'));
 
-export const state = { uid: null, log: [] };
+export const state = { uid: null, log: [], otp: '123456', sent: [] };
 let chain = Promise.resolve();
 const serial = (fn) => { const p = chain.then(fn, fn); chain = p.catch(() => {}); return p; };
 const run = (sql, params = []) => serial(async () => {
@@ -70,6 +70,16 @@ export const sb = {
     getUser: async () => ({ data: { user: state.uid ? { id: state.uid } : null } }),
     signOut: async () => { state.uid = null; return {}; },
     onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }),
+    // mobile login: any number gets the code in state.otp; a new number becomes a new user, like Supabase does
+    signInWithOtp: async ({ phone, options }) => { state.sent.push({ phone, channel: options?.channel }); return { data: {}, error: null }; },
+    verifyOtp: async ({ phone, token }) => {
+      if (token !== state.otp) return { data: { user: null, session: null }, error: { message: 'Token has expired or is invalid' } };
+      const d = phone.replace(/\D/g, '');
+      const id = await serial(async () => (await db.query(`select id from auth.users where phone = $1`, [d])).rows[0]?.id
+        || (await db.query(`insert into auth.users (phone, phone_confirmed_at) values ($1, now()) returning id`, [d])).rows[0].id);
+      state.uid = id;
+      return { data: { user: { id }, session: { user: { id } } }, error: null };
+    },
     signInWithPassword: async () => ({ error: null }), signUp: async () => ({ data: {}, error: null }),
     resetPasswordForEmail: async () => ({ error: null }), updateUser: async () => ({ error: null }), setSession: async () => ({}),
   },
