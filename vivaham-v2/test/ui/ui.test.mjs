@@ -49,6 +49,7 @@ setv($$('.irow')[1].querySelector('input[type=tel]'), '09876500002'); $$('.irow'
 await click($$('button').find((b) => b.textContent === 'Create wedding'), 800); await wait(500);
 ok(/Wedding created/.test(text()) && /Lakshmi/.test(text()) && /Gopi/.test(text()), 'after creating: list of people to tell'); noErr('invited');
 ok($$('a').filter((a) => /wa\.me\/91987650000[12]\?text=/.test(a.href)).length === 2, 'one WhatsApp button per invited person');
+ok($$('.card .badge').map((b) => b.textContent).join() === 'Family,Helper', 'created screen shows each role: ' + $$('.card .badge').map((b) => b.textContent));
 ok((await sql(`select phone, role from vivaham.phone_invites order by phone`)).map((r) => r.phone + r.role).join() === '919876500001family,919876500002helper', 'invites saved with number + role');
 await click($$('button').find((b) => b.textContent === 'Go to Home'), 600);
 ok(location.hash === '#/home' && /days to go/.test(text()) && /Akhil & Sree/.test(text()), 'wedding created, home shows countdown'); noErr('home');

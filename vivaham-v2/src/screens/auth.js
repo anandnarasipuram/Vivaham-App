@@ -253,7 +253,7 @@ function invited(wedding, people) {
   plain(h('h1', null, t('Wedding created') + ' 🎉'),
     ok.length ? h('p', { class: 'mute' }, t('Now tell them. Tap WhatsApp next to each name. They log in with their mobile number and are inside.')) : null,
     ...ok.map((p) => h('div', { class: 'card row between' },
-      h('div', { class: 'grow' }, h('b', null, p.name), h('div', { class: 'mute' }, prettyPhone(p.phone))),
+      h('div', { class: 'grow' }, h('b', null, p.name), ' ', h('span', { class: 'badge b-' + p.role }, t({ admin: 'Admin', family: 'Family', helper: 'Helper' }[p.role])), h('div', { class: 'mute' }, prettyPhone(p.phone))),
       h('a', { class: 'btn sm gold', style: 'text-decoration:none', href: waUrl(p.phone, inviteText(wedding, p.phone, S.profile?.name)), target: '_blank', rel: 'noopener' }, 'WhatsApp'))),
     ...bad.map((p) => h('div', { class: 'card' }, h('b', null, p.name), h('div', { class: 'red small' }, p.error), h('div', { class: 'mute' }, t('Not invited. You can add them again in Profile.')))),
     h('button', { class: 'btn', style: 'margin-top:8px', onclick: () => { location.hash = '#/home'; go(); } }, t('Go to Home')));
