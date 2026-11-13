@@ -36,7 +36,7 @@ function parseHash() {
   return { name: parts[0] || '', id: parts[1], q: Object.fromEntries(new URLSearchParams(qs || '')) };
 }
 
-const PUBLIC = ['login', 'signup', 'forgot', 'reset', 'join'];
+const PUBLIC = ['login', 'email', 'signup', 'forgot', 'reset', 'join'];
 let token = 0, recovery = false;
 
 export async function go() {
@@ -53,12 +53,23 @@ export async function go() {
       if (!PUBLIC.includes(r.name)) { location.hash = '#/login'; return; }
       return auth.screens[r.name]({ q: r.q });
     }
+    if (!S.claimed) {
+      // invited by mobile number? logging in with that number is enough to be inside
+      S.claimed = true;
+      const { data: joined } = await sb.rpc('claim_phone_invites');
+      if (joined?.length) {
+        if (!localStorage.getItem('wedding')) localStorage.setItem('wedding', joined[0].wedding_id);
+        S.profile = null; S.wedding = null;
+        toast(`${t('You are now part of')} ${joined.map((j) => j.name).join(', ')} 🎉`);
+      }
+    }
     if (!S.profile) {
       const { data } = await sb.from('profiles').select('*').eq('user_id', S.user.id).maybeSingle();
       S.profile = data || { name: '', language: 'en' };
       if (data?.language) setLang(data.language);
     }
     if (r.name === 'reset') return auth.screens.reset({ q: r.q });
+    if (!S.profile.name?.trim()) return auth.screens.name();
     if (r.name === 'join') return auth.screens.join({ q: r.q });
     if (!S.wedding) await loadWeddings();
     if (!S.wedding) { if (r.name !== 'onboard') { location.hash = '#/onboard'; return; } return auth.screens.onboard({}); }
@@ -81,7 +92,7 @@ export function afterAuthRedirect() {
 if (configured) {
   sb.auth.onAuthStateChange((ev, session) => {
     if (ev === 'PASSWORD_RECOVERY') { recovery = true; S.user = session?.user || null; go(); }
-    if (ev === 'SIGNED_OUT') { Object.assign(S, { user: null, profile: null, wedding: null, weddings: [], members: [], events: [] }); recovery = false; }
+    if (ev === 'SIGNED_OUT') { Object.assign(S, { user: null, profile: null, wedding: null, weddings: [], members: [], events: [], claimed: false }); recovery = false; }
   });
 }
 export const endRecovery = () => (recovery = false);

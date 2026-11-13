@@ -4,7 +4,7 @@ import fs from 'node:fs';
 const db = new PGlite();
 const stub = `
 create schema auth; create schema storage;
-create table auth.users (id uuid primary key default gen_random_uuid(), email text, raw_user_meta_data jsonb default '{}');
+create table auth.users (id uuid primary key default gen_random_uuid(), email text, phone text, phone_confirmed_at timestamptz, raw_user_meta_data jsonb default '{}');
 create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('app.uid', true), '')::uuid $$;
 create table storage.buckets (id text primary key, name text, public boolean, file_size_limit bigint, allowed_mime_types text[]);
 create table storage.objects (id uuid default gen_random_uuid(), bucket_id text, name text);
@@ -14,7 +14,8 @@ grant usage on schema auth, storage to anon, authenticated;
 grant execute on function auth.uid() to anon, authenticated;
 `;
 await db.exec(stub);
-const sql = fs.readFileSync(new URL('../supabase/migrations/20261110_vivaham_v2.sql', import.meta.url), 'utf8');
+// every migration, in file-name order
+const sql = fs.readdirSync(new URL('../supabase/migrations/', import.meta.url)).filter((f) => f.endsWith('.sql')).sort().map((f) => fs.readFileSync(new URL('../supabase/migrations/' + f, import.meta.url), 'utf8')).join('\n');
 await db.exec(sql);
 await db.exec(sql); // idempotent
 
@@ -131,6 +132,50 @@ bud = (await as(F, `select vivaham.budget_summary($1) as s`, [w])).r.rows[0].s;
 ok(bud.by_category.length === 6, 'by category rows');
 ok((await as(F, `delete from vivaham.events where id=$1`, [ev])).r, 'delete event cascades');
 ok((await db.query(`select count(*)::int c from vivaham.meals`)).rows[0].c === 0, 'meals cascaded');
+// ---- invite by mobile number ----
+const mkPhone = async (phone, confirmed = true) => (await db.query(`insert into auth.users(phone, phone_confirmed_at) values ($1, $2) returning id`, [phone, confirmed ? new Date().toISOString() : null])).rows[0].id;
+ok((await as(F, `select vivaham.invite_phone($1,'Lakshmi','+919876500001','family')`, [w])).e, 'family cannot invite by number');
+ok((await as(A, `select vivaham.invite_phone($1,'Lakshmi','12345','family')`, [w])).e, 'bad number rejected');
+ok((await as(A, `select vivaham.invite_phone($1,'Lakshmi','+91 98765 00001','family')`, [w])).r, 'admin invites by number');
+ok((await db.query(`select phone from vivaham.phone_invites`)).rows[0].phone === '919876500001', 'number stored as digits with country code');
+ok((await db.query(`select user_id, role from vivaham.members where name='Lakshmi'`)).rows[0].user_id === null, 'invited person waits as a name');
+ok((await as(A, `select vivaham.invite_phone($1,'Someone','+919876500001','helper')`, [w])).e, 'same number cannot be invited twice');
+ok((await as(A, `select vivaham.invite_phone($1,'Lakshmi','+919876500009','helper')`, [w])).e, 'same waiting name cannot get a second number');
+ok((await as(A, `select vivaham.invite_phone($1,'Fam','+919876500008','helper')`, [w])).e, 'name of someone with a login is refused');
+ok((await as(F, `select * from vivaham.phone_invites`)).r.rows.length === 0, 'family cannot see invited numbers');
+ok((await as(A, `select * from vivaham.phone_invites`)).r.rows.length === 1, 'admin sees invited numbers');
+// a number that was never confirmed with a code gets nothing
+const U = await mkPhone('919876500001', false);
+ok((await as(U, `select vivaham.claim_phone_invites() as j`)).r.rows[0].j.length === 0, 'unconfirmed number cannot claim');
+await db.query(`delete from auth.users where id=$1`, [U]);
+// a stranger's number gets nothing
+const S2 = await mkPhone('919000000000');
+ok((await as(S2, `select vivaham.claim_phone_invites() as j`)).r.rows[0].j.length === 0, 'other number joins nothing');
+ok((await as(S2, 'select * from vivaham.my_weddings()')).r.rows.length === 0, 'other number is in no wedding');
+// the invited number logs in: inside, with the role and the name the admin typed
+const L = await mkPhone('919876500001');
+const joined = (await as(L, `select vivaham.claim_phone_invites() as j`)).r.rows[0].j;
+ok(joined.length === 1 && joined[0].wedding_id === w, 'invited number joins on login ' + JSON.stringify(joined));
+const lrow = (await db.query(`select user_id, role from vivaham.members where name='Lakshmi'`)).rows;
+ok(lrow.length === 1 && lrow[0].user_id === L && lrow[0].role === 'family', 'waiting name became the login');
+ok((await db.query(`select name from vivaham.profiles where user_id=$1`, [L])).rows[0].name === 'Lakshmi', 'profile takes the invited name');
+ok((await as(L, `select vivaham.claim_phone_invites() as j`)).r.rows[0].j.length === 0, 'claiming twice does nothing');
+ok((await as(L, 'select * from vivaham.my_weddings()')).r.rows[0].role === 'family', 'invited person sees the wedding');
+ok((await as(A, `select vivaham.invite_phone($1,'Again','+919876500001','helper')`, [w])).e, 'number already inside is refused');
+// admin can cancel a waiting invite; the number then joins nothing
+ok((await as(A, `select vivaham.invite_phone($1,'Ravi','+14155550100','helper')`, [w])).r, 'invite a foreign number');
+ok((await as(F, `delete from vivaham.phone_invites where name='Ravi'`)).r.affectedRows === 0, 'family cannot cancel an invite');
+ok((await as(A, `delete from vivaham.phone_invites where name='Ravi'`)).r.affectedRows === 1, 'admin cancels an invite');
+const R = await mkPhone('14155550100');
+ok((await as(R, `select vivaham.claim_phone_invites() as j`)).r.rows[0].j.length === 0, 'cancelled invite no longer works');
+// removing the waiting name removes its invite
+await as(A, `select vivaham.invite_phone($1,'Gopi','+919876500002','helper')`, [w]);
+await as(A, `delete from vivaham.members where name='Gopi'`);
+ok((await db.query(`select count(*)::int c from vivaham.phone_invites where name='Gopi'`)).rows[0].c === 0, 'removing the name removes the invite');
+// anon cannot call any of it
+ok((await as(null, `select vivaham.claim_phone_invites()`)).e, 'anon cannot claim');
+ok((await as(null, `select * from vivaham.phone_invites`)).e, 'anon cannot read invites');
+
 // wedding delete
 ok((await as(A, `delete from vivaham.weddings where id=$1`, [w])).r.affectedRows === 1, 'admin deletes wedding');
 ok((await db.query(`select count(*)::int c from vivaham.members`)).rows[0].c === 0, 'members cascaded');
