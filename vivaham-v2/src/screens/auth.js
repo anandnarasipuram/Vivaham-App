@@ -5,6 +5,7 @@ import { t, setLang, getLang } from '../lib/i18n.js';
 import { plain, go, afterAuthRedirect, reloadAll, endRecovery } from '../main.js';
 import { phoneInput, prettyPhone, canPickContacts, pickContacts, inviteText } from '../lib/phone.js';
 import { waUrl } from '../lib/format.js';
+import { capture, consent, setConsent } from '../lib/track.js';
 
 const langBar = () => h('div', { class: 'row', style: 'justify-content:flex-end;margin-bottom:10px' },
   ...[['en', 'English'], ['te', 'తెలుగు']].map(([l, n]) => h('button', { class: 'chip' + (getLang() === l ? ' on' : ''), onclick: () => { setLang(l); go(); } }, n)));
@@ -12,7 +13,14 @@ const field = (label, props) => h('label', { class: 'f' }, h('span', null, t(lab
 const link = (txt, hash) => h('button', { class: 'link', onclick: () => (location.hash = hash) }, txt);
 const val = (root, n) => root.querySelector(`[name=${n}]`).value.trim();
 
-async function afterLogin() {
+// Shown under every "log in" button. Tapping the button is the agreement; it can be switched off in Profile.
+const agree = () => h('p', { class: 'mute agree' }, t('By continuing you agree to the'), ' ',
+  h('button', { class: 'link', type: 'button', onclick: () => (location.hash = '#/privacy') }, t('Privacy notice')), '. ',
+  t('We record how the app is used (screens and taps), never what you type.'));
+const agreed = () => { if (consent() == null) setConsent(true); };
+
+async function afterLogin(how) {
+  capture('login_success', { how });
   S.profile = null; S.wedding = null; S.claimed = false;
   afterAuthRedirect();
 }
@@ -43,13 +51,13 @@ export const screens = {
         try {
           const phone = ph.get();
           if (!phone) throw new Error('Please check the mobile number.');
-          btn.disabled = true;
-          await sendCode(phone); go();
-        } catch (er) { btn.disabled = false; fail(er); }
+          btn.disabled = true; agreed();
+          await sendCode(phone); capture('login_code_sent', { channel: CHANNEL, country: phone.slice(0, phone.startsWith('+91') ? 3 : 2) }); go();
+        } catch (er) { btn.disabled = false; capture('login_code_not_sent'); fail(er); }
       } },
         h('label', { class: 'f' }, h('span', null, t('Mobile number')), ph.el),
         h('p', { class: 'mute', style: 'margin:-6px 0 14px' }, t(CHANNEL === 'whatsapp' ? 'We send a 6-digit code to your WhatsApp.' : 'We send a 6-digit code by SMS.')),
-        btn);
+        btn, agree());
       plain(...head, f,
         h('div', { class: 'row between', style: 'margin-top:12px' }, link(t('I have an invite code'), '#/join'), link(t('Use email instead'), '#/email')));
       return;
@@ -66,12 +74,12 @@ export const screens = {
         const { data, error } = await sb.auth.verifyOtp({ phone, token, type: 'sms' });
         if (error) throw otpError(error.message, true);
         otp = null;
-        S.user = data?.user || (await sb.auth.getUser()).data.user; await afterLogin();
-      } catch (er) { btn.disabled = false; fail(er); }
+        S.user = data?.user || (await sb.auth.getUser()).data.user; await afterLogin('mobile');
+      } catch (er) { btn.disabled = false; capture('login_code_wrong'); fail(er); }
     } },
       h('label', { class: 'f' }, h('span', null, t('Code')), code), btn);
     const again = h('button', { class: 'link', type: 'button', onclick: async () => {
-      try { again.disabled = true; await sendCode(phone); toast(t('New code sent.')); tick(); } catch (er) { fail(er); tick(); }
+      try { again.disabled = true; await sendCode(phone); capture('login_code_sent_again'); toast(t('New code sent.')); tick(); } catch (er) { fail(er); tick(); }
     } });
     const tick = () => {
       const left = Math.ceil(RESEND_SECONDS - (Date.now() - (otp?.at || 0)) / 1000);
@@ -83,6 +91,22 @@ export const screens = {
       h('div', { class: 'row between', style: 'margin-top:12px' }, again, h('button', { class: 'link', type: 'button', onclick: () => { otp = null; go(); } }, t('Change number'))));
     tick(); code.focus();
   },
+  // plain-language privacy notice (linked from every log-in button and from Profile)
+  privacy() {
+    const who = import.meta.env.VITE_OPERATOR, contact = import.meta.env.VITE_CONTACT;
+    const sec = (title, ...lines) => [h('div', { class: 'sec' }, t(title)), ...lines.map((l) => h('p', { style: 'margin:0 0 8px' }, t(l)))];
+    plain(langBar(), h('h1', null, t('Privacy notice')),
+      h('p', { class: 'mute' }, t('Short and plain. If anything is unclear, ask us.')),
+      ...sec('What we keep', 'Your name and mobile number (or email), so you can log in.',
+        'Everything your family types into the wedding: events, guests, tasks, shopping, budget, photos. Only the people in your wedding can see it.'),
+      ...sec('How the app is used', 'To improve the app we record which screens are opened, which built-in buttons are tapped and how long a visit lasts.',
+        'We never record what you type: no names, no numbers, no amounts, no photos.',
+        'You can switch this off any time in Profile under "Help improve Vivaham".'),
+      ...sec('Who gets it', 'We do not sell your data and show no advertising. It is stored with our service providers for the database, the login code and the usage statistics.'),
+      ...sec('Your choices', 'You can ask us to show, correct or delete your data, or your whole wedding, at any time.'),
+      (who || contact) ? h('p', null, h('b', null, t('Contact') + ': '), [who, contact].filter(Boolean).join(' · ')) : null,
+      h('button', { class: 'btn ghost', style: 'margin-top:12px', onclick: () => { if (history.length > 1) history.back(); else { location.hash = '#/login'; } } }, t('Back')));
+  },
   // first login with a mobile number: we only know the number, so ask what to call them
   name() {
     const f = h('form', { onsubmit: async (e) => {
@@ -91,7 +115,7 @@ export const screens = {
         const n = val(f, 'name');
         if (!n) throw new Error('Please type your name.');
         await must(sb.rpc('update_my_name', { p_name: n }));
-        S.profile.name = n; go();
+        S.profile.name = n; capture('name_given'); go();
       } catch (er) { fail(er); }
     } },
       field('Your name', { name: 'name', required: true, autocomplete: 'name', placeholder: 'Lakshmi' }),
@@ -105,12 +129,12 @@ export const screens = {
       try {
         const { error } = await sb.auth.signInWithPassword({ email: val(f, 'email'), password: f.password.value });
         if (error) throw new Error(error.message === 'Invalid login credentials' ? "That email or password doesn't match." : error.message);
-        S.user = (await sb.auth.getUser()).data.user; await afterLogin();
+        agreed(); S.user = (await sb.auth.getUser()).data.user; await afterLogin('email');
       } catch (er) { fail(er); }
     } },
       field('Email', { name: 'email', type: 'email', autocomplete: 'email', required: true }),
       field('Password', { name: 'password', type: 'password', autocomplete: 'current-password', required: true }),
-      h('button', { class: 'btn', type: 'submit' }, t('Log in')));
+      h('button', { class: 'btn', type: 'submit' }, t('Log in')), agree());
     plain(langBar(), h('h1', null, t('Log in with email')), f,
       h('div', { class: 'row between', style: 'margin-top:12px' }, link(t('Forgot password?'), '#/forgot'), link(t('Create account'), '#/signup')),
       link(t('Use mobile number instead'), '#/login'));
@@ -123,13 +147,13 @@ export const screens = {
         const { data, error } = await sb.auth.signUp({ email: val(f, 'email'), password: f.password.value, options: { data: { name: val(f, 'name') }, emailRedirectTo: location.origin } });
         if (error) throw new Error(error.message);
         if (!data.session) { toast('Check your email and tap the link to confirm, then log in.'); location.hash = '#/email'; return; }
-        S.user = data.user; await afterLogin();
+        agreed(); S.user = data.user; await afterLogin('email_signup');
       } catch (er) { fail(er); }
     } },
       field('Your name', { name: 'name', required: true, autocomplete: 'name' }),
       field('Email', { name: 'email', type: 'email', required: true, autocomplete: 'email' }),
       field('Password', { name: 'password', type: 'password', required: true, autocomplete: 'new-password', minLength: 6 }),
-      h('button', { class: 'btn', type: 'submit' }, t('Sign up')));
+      h('button', { class: 'btn', type: 'submit' }, t('Sign up')), agree());
     plain(langBar(), h('h1', null, t('Create account')), f, link(t('I already have an account'), '#/email'));
   },
   forgot() {
@@ -172,7 +196,7 @@ export const screens = {
       sessionStorage.setItem('joinCode', c);
       box.append(h('div', { class: 'card' }, h('div', { class: 'mute' }, t('You are invited to')), h('h2', { style: 'color:var(--maroon)' }, p.wedding_name), h('span', { class: 'badge b-' + p.role }, t({ admin: 'Admin', family: 'Family', helper: 'Helper' }[p.role]))));
       if (S.user) box.append(h('button', { class: 'btn', onclick: async () => {
-        try { await must(sb.rpc('accept_invite', { p_code: c })); sessionStorage.removeItem('joinCode'); await reloadAll(); toast('Welcome!'); location.hash = '#/home'; go(); } catch (e) { fail(e); }
+        try { await must(sb.rpc('accept_invite', { p_code: c })); sessionStorage.removeItem('joinCode'); capture('joined_by_code'); await reloadAll(); toast('Welcome!'); location.hash = '#/home'; go(); } catch (e) { fail(e); }
       } }, t('Join')));
       else box.append(h('p', { class: 'mute' }, t('Log in first, then you will join automatically.')),
         h('button', { class: 'btn', onclick: () => (location.hash = '#/login') }, t('Log in with mobile number')),
@@ -220,6 +244,7 @@ export const screens = {
           if (error) p.error = error.message;
         }
         localStorage.setItem('wedding', id);
+        capture('wedding_created', { has_date: !!date.value, invited: people.filter((p) => !p.error).length, invite_failed: people.filter((p) => p.error).length });
         await reloadAll();
         if (!people.length) { location.hash = '#/home'; go(); return; }
         invited(name.value.trim(), people);

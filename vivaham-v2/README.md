@@ -50,6 +50,11 @@ V2 runs at its own address while V1 keeps running. Cloudflare now builds these a
 
 **Switching the main address to V2 later:** in the existing `vivaham-app` Cloudflare project change Root directory to `vivaham-v2` and Build command to `npm run build`, add the two `VITE_...` variables, and rebuild. Old V1 links like `/join/CODE` open V2's Join screen (V1 codes themselves do not work in V2; send new invites). To go back, set Root directory to `vivaham` and Build command to `npm run build:web` again.
 
+## Usage statistics and installing on the phone
+- What is recorded about app use, and how to switch it on: see `TRACKING.md`.
+- The app installs from the browser, not from an app store. On Android the Home screen shows an **Install** button; on iPhone it shows the Share -> Add to Home Screen steps.
+- A QR code should point to `https://YOUR-DOMAIN/?f=1`. The `f` tag is stored with the usage statistics so flyer batches can be told apart later.
+
 ## Tests
 `npm test` runs three checks: the SQL rules (roles, prices, invites by code and by mobile number, last-admin), a frontend-vs-backend parity check
 (every table, column and function the app uses exists), and the real screens in a simulated browser against the real database rules.

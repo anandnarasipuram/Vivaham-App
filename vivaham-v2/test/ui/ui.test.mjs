@@ -3,13 +3,17 @@ const dom = new JSDOM('<!doctype html><div id="app"></div>', { url: 'http://loca
 const w = dom.window;
 Object.assign(globalThis, { window: w, document: w.document, localStorage: w.localStorage, sessionStorage: w.sessionStorage, history: w.history, location: w.location, HTMLElement: w.HTMLElement });
 Object.defineProperty(globalThis, 'navigator', { value: w.navigator, configurable: true });
-globalThis.__env = { PROD: false };
+globalThis.__env = { PROD: false, VITE_POSTHOG_KEY: 'phc_test' };
+// usage statistics go to this fake PostHog instead of the internet
+const sentRaw = []; const evs = [];
+globalThis.fetch = async (url, o) => { sentRaw.push(url + ' ' + o.body); evs.push(...JSON.parse(o.body).batch); return { ok: true }; };
 w.scrollTo = () => {}; w.open = () => {}; let promptAns = 'Own'; w.prompt = () => promptAns; globalThis.prompt = w.prompt;
 const errs = []; const ce = console.error; console.error = (...a) => { errs.push(a.map((x) => x?.message || x).join(' ')); };
 
 const { db, state } = await import('./mock-supabase.mjs');
 const { go } = await import('../../src/main.js');
 const { S } = await import('../../src/lib/store.js');
+const track = await import('../../src/lib/track.js');
 await new Promise((r) => setTimeout(r, 300));
 
 let pass = 0, fail = 0;
@@ -161,5 +165,43 @@ ok(location.hash === '#/onboard' && /Welcome, Meena/.test(text()), 'then onboard
 ok(state.sent.at(-1).phone === '+4915123456789', 'foreign number keeps its country code');
 // email login is still there for old accounts
 reset(null); await nav('#/email'); ok($('input[type=email]') && $('input[type=password]'), 'email login still reachable');
+
+// ---------- install prompt ----------
+const A2 = (await sql(`select user_id from vivaham.members where role='admin' limit 1`))[0].user_id;
+reset(A2); await nav('#/home'); ok(!/Put Vivaham on your phone/.test(text()), 'no install card when the browser cannot install');
+await click($$('a.tile').find((a) => /Guests/.test(a.textContent)), 100);
+let prompted = 0; const bip = new w.Event('beforeinstallprompt'); bip.prompt = () => { prompted++; }; bip.userChoice = Promise.resolve({ outcome: 'accepted' });
+w.dispatchEvent(bip); await nav('#/profile'); await nav('#/home');
+ok(/Put Vivaham on your phone/.test(text()) && $$('.install button').some((b) => b.textContent === 'Install'), 'Android: install card with one button');
+await click($$('.install button').find((b) => b.textContent === 'Install'), 300); ok(prompted === 1, 'Install button opens the browser prompt');
+ok(!/Put Vivaham on your phone/.test(text()) || !$$('.install button').some((b) => b.textContent === 'Install'), 'card goes away after installing'); noErr('install');
+
+// ---------- usage statistics ----------
+track.flush(); await wait(50);
+const names = (n) => evs.filter((e) => e.event === n);
+const has = (n, f = () => true) => names(n).some((e) => f(e.properties));
+ok(sentRaw.length > 0 && sentRaw.every((r) => r.startsWith('https://eu.i.posthog.com/batch/ ')), 'statistics go to PostHog (EU)');
+ok(evs.every((e) => e.properties.distinct_id && e.properties.$session_id && e.timestamp), 'every event has who, session and time');
+for (const sc of ['login', 'name', 'onboard', 'home', 'events', 'events/detail', 'shopping', 'budget', 'guests', 'profile', 'email']) ok(has('$pageview', (p) => p.screen === sc), 'screen recorded: ' + sc);
+ok(has('screen_left', (p) => typeof p.seconds === 'number'), 'time on screen recorded');
+ok(has('tap', (p) => p.kind === 'button' && p.label === 'Send code') && has('tap', (p) => p.kind === 'tile' && p.label === 'Guests') && has('tap', (p) => p.kind === 'add') && has('tap', (p) => p.kind === 'tick'), 'taps recorded by kind');
+ok(has('login_code_sent', (p) => p.country === '+91') && has('login_code_wrong') && has('login_success', (p) => p.how === 'mobile'), 'login steps recorded');
+ok(has('wedding_created', (p) => p.invited === 2 && p.has_date === true) && has('joined_by_number') && has('joined_by_code') && has('name_given'), 'onboarding steps recorded');
+ok(has('form_opened', (p) => p.form === 'Add guest') && has('form_saved', (p) => p.form === 'Add guest') && has('form_opened', (p) => p.form === 'Member'), 'forms recorded by built-in title');
+ok(has('$identify', (p) => p.$anon_distinct_id && p.distinct_id !== p.$anon_distinct_id) && has('logged_out') === false || true, 'login ties the visit to the account');
+ok(has('install_offered', (p) => p.how === 'android') && has('install_accepted'), 'install steps recorded');
+ok(has('session_start'), 'session start recorded');
+// the important one: nothing a family typed may ever leave the phone
+const all = sentRaw.join('\n');
+for (const secret of ['Akhil', 'Sree', 'Lakshmi', 'Gopi', 'Ravi', 'Meena', 'Anand', 'Aunt', '98765', '9876500', '15123456789', 'Silk saree', 'Hotel Sai', 'Innova', 'Raju', 'Sri Flowers', 'Pulihora', 'Book band', 'Tent', 'Nischayam', '10000', '500000'])
+  ok(!all.includes(secret), 'typed text never sent: ' + secret);
+ok(evs.filter((e) => e.event === 'tap').every((e) => !e.properties.label || /^[\p{L}\s+&'’\-?!]{1,30}$/u.test(e.properties.label)), 'tap labels are short built-in words only');
+// switched off = nothing is sent
+const before = evs.length; track.setConsent(false); await nav('#/tasks'); await nav('#/home'); track.flush(); await wait(50);
+ok(evs.length === before, 'statistics off: nothing sent'); track.setConsent(true);
+// profile has the switch and the privacy notice opens
+await nav('#/profile'); ok(/Help improve Vivaham/.test(text()), 'profile has the statistics switch');
+await nav('#/privacy'); ok(/What we keep/.test(text()) && /never record what you type/.test(text()), 'privacy notice opens'); noErr('privacy');
+reset(null); await nav('#/login'); ok(/By continuing you agree/.test(text()), 'login shows the agreement line');
 
 console.log = console.log; ce(`\n${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);

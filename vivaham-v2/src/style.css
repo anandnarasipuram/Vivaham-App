@@ -84,3 +84,7 @@ a.act{color:var(--maroon);font-weight:700;text-decoration:none;font-size:14px}
 .irow{border:1.5px solid var(--line);border-radius:14px;padding:10px;margin-bottom:10px;background:var(--cream);display:grid;gap:8px}
 .irow .row .inp{flex:1}
 .link:disabled{color:var(--mute);text-decoration:none}
+.agree{margin:12px 0 0;font-size:12px;line-height:1.5}
+.agree .link{padding:0;font-size:12px}
+.card.install{border:1.5px solid var(--gold);background:#fffaf0}
+.steps{margin:0 0 10px;padding-left:20px;font-size:14px;line-height:1.6}

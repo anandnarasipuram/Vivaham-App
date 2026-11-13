@@ -5,6 +5,7 @@ import { h, clear, fail, toast } from './lib/ui.js';
 import { t, setLang, getLang } from './lib/i18n.js';
 import { loadWeddings, loadContext } from './lib/api.js';
 import * as auth from './screens/auth.js';
+import * as track from './lib/track.js';
 
 const app = document.getElementById('app');
 const routes = {};
@@ -14,6 +15,7 @@ const NAV = [['home', '🏠', 'Home'], ['profile', '👤', 'Profile'], ['materia
 
 // page shell: header + content + bottom nav
 export function page({ title, sub, back, right, nav = true, fab }, ...content) {
+  const at = parseHash(); track.screen(at.name + (at.id ? '/detail' : ''));
   clear(app);
   const hdr = h('div', { class: 'hdr' }, h('div', { class: 'in' },
     back && h('button', { class: 'back', onclick: () => (location.hash = back) }, '←'),
@@ -36,7 +38,9 @@ function parseHash() {
   return { name: parts[0] || '', id: parts[1], q: Object.fromEntries(new URLSearchParams(qs || '')) };
 }
 
-const PUBLIC = ['login', 'email', 'signup', 'forgot', 'reset', 'join'];
+const PUBLIC = ['login', 'email', 'signup', 'forgot', 'reset', 'join', 'privacy'];
+// show a login / welcome screen and count it as a screen view
+const show = (name, arg) => { track.screen(name); return auth.screens[name](arg || {}); };
 let token = 0, recovery = false;
 
 export async function go() {
@@ -51,8 +55,10 @@ export async function go() {
     }
     if (!S.user) {
       if (!PUBLIC.includes(r.name)) { location.hash = '#/login'; return; }
-      return auth.screens[r.name]({ q: r.q });
+      return show(r.name, { q: r.q });
     }
+    track.identify(S.user.id);
+    if (r.name === 'privacy') return show('privacy');
     if (!S.claimed) {
       // invited by mobile number? logging in with that number is enough to be inside
       S.claimed = true;
@@ -61,6 +67,7 @@ export async function go() {
         if (!localStorage.getItem('wedding')) localStorage.setItem('wedding', joined[0].wedding_id);
         S.profile = null; S.wedding = null;
         toast(`${t('You are now part of')} ${joined.map((j) => j.name).join(', ')} 🎉`);
+        track.capture('joined_by_number', { weddings: joined.length });
       }
     }
     if (!S.profile) {
@@ -68,11 +75,11 @@ export async function go() {
       S.profile = data || { name: '', language: 'en' };
       if (data?.language) setLang(data.language);
     }
-    if (r.name === 'reset') return auth.screens.reset({ q: r.q });
-    if (!S.profile.name?.trim()) return auth.screens.name();
-    if (r.name === 'join') return auth.screens.join({ q: r.q });
+    if (r.name === 'reset') return show('reset', { q: r.q });
+    if (!S.profile.name?.trim()) return show('name');
+    if (r.name === 'join') return show('join', { q: r.q });
     if (!S.wedding) await loadWeddings();
-    if (!S.wedding) { if (r.name !== 'onboard') { location.hash = '#/onboard'; return; } return auth.screens.onboard({}); }
+    if (!S.wedding) { if (r.name !== 'onboard') { location.hash = '#/onboard'; return; } return show('onboard'); }
     if (PUBLIC.includes(r.name) || r.name === 'onboard' || !r.name) { location.hash = '#/home'; return; }
     await loadContext();
     if (my !== token) return;
@@ -92,7 +99,7 @@ export function afterAuthRedirect() {
 if (configured) {
   sb.auth.onAuthStateChange((ev, session) => {
     if (ev === 'PASSWORD_RECOVERY') { recovery = true; S.user = session?.user || null; go(); }
-    if (ev === 'SIGNED_OUT') { Object.assign(S, { user: null, profile: null, wedding: null, weddings: [], members: [], events: [], claimed: false }); recovery = false; }
+    if (ev === 'SIGNED_OUT') { Object.assign(S, { user: null, profile: null, wedding: null, weddings: [], members: [], events: [], claimed: false }); recovery = false; track.capture('logged_out'); track.flush(); track.reset(); }
   });
 }
 export const endRecovery = () => (recovery = false);
@@ -123,6 +130,7 @@ if (oldJoin) history.replaceState(null, '', '/#/join?code=' + encodeURIComponent
 
 import('./screens/index.js').then(async () => {
   document.documentElement.lang = getLang();
+  track.start();
   if (configured) await bootRecovery();
   window.addEventListener('hashchange', go);
   go();

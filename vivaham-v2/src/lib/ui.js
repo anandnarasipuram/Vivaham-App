@@ -1,4 +1,5 @@
 import { t } from './i18n.js';
+import { capture } from './track.js';
 
 export function h(tag, attrs, ...kids) {
   const el = document.createElement(tag);
@@ -58,8 +59,10 @@ export function confirmBox(msg, onYes, yesLabel = 'Delete') {
 const optv = (o) => (typeof o === 'object' ? o.v : o);
 const optl = (o) => t(typeof o === 'object' ? o.l : o);
 
-export function openForm({ title, fields, values = {}, onSave, onDelete, saveLabel = 'Save', extra }) {
+export function openForm({ title, fields, values = {}, onSave, onDelete, saveLabel = 'Save', extra, trackAs }) {
   const v = { ...values };
+  const form = trackAs || title;   // a built-in title such as 'Add guest'; never a person's name
+  capture('form_opened', { form });
   sheet(title, (box, close) => {
     const body = h('div');
     const redraw = () => { clear(body); fields.forEach((f) => { if (!f.show || f.show(v)) body.append(renderField(f, v, redraw)); }); };
@@ -72,12 +75,12 @@ export function openForm({ title, fields, values = {}, onSave, onDelete, saveLab
         if (f.req && (v[f.k] == null || String(v[f.k]).trim() === '' || (Array.isArray(v[f.k]) && !v[f.k].length))) { toast(`${t(f.label)} ?`, true); return; }
       }
       save.disabled = true;
-      try { await onSave(v); close(); } catch (e) { fail(e); save.disabled = false; }
+      try { await onSave(v); capture('form_saved', { form }); close(); } catch (e) { capture('form_failed', { form }); fail(e); save.disabled = false; }
     } }, t(saveLabel));
     box.append(h('div', { style: 'margin-top:8px' }, save));
     box.append(h('div', { class: 'row', style: 'margin-top:10px' },
       h('button', { class: 'btn ghost', onclick: close }, t('Cancel')),
-      onDelete && h('button', { class: 'btn danger', onclick: () => confirmBox('Delete this?', async () => { try { await onDelete(); close(); } catch (e) { fail(e); } }) }, t('Delete'))));
+      onDelete && h('button', { class: 'btn danger', onclick: () => confirmBox('Delete this?', async () => { try { await onDelete(); capture('form_deleted', { form }); close(); } catch (e) { fail(e); } }) }, t('Delete'))));
   });
 }
 

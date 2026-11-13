@@ -6,6 +6,8 @@ import { page, go } from '../main.js';
 import { fmtDate, waShare, waUrl } from '../lib/format.js';
 import { phoneInput, prettyPhone, inviteText } from '../lib/phone.js';
 import { nul } from '../lib/api.js';
+import { consent, setConsent, capture } from '../lib/track.js';
+import { installCard } from '../lib/install.js';
 
 const ROLES = [['admin', 'Admin'], ['family', 'Family'], ['helper', 'Helper']];
 const badge = (r) => h('span', { class: 'badge b-' + r }, t(ROLES.find((x) => x[0] === r)[1]));
@@ -46,7 +48,7 @@ export async function render(_p, refresh) {
         await must(sb.from('members').insert({ wedding_id: wid(), name: v.name.trim(), role: v.role })); refresh();
       } });
   };
-  const member = (m) => openForm({ title: m.name, values: { role: m.role },
+  const member = (m) => openForm({ title: m.name, trackAs: 'Member', values: { role: m.role },
     fields: [{ k: 'role', label: 'Role', type: 'chips', opts: ROLES.map(([v, l]) => ({ v, l: t(l) })) }],
     saveLabel: 'Save',
     extra: () => { const i = inviteOf(m); return i ? h('div', { class: 'card' },
@@ -77,5 +79,11 @@ export async function render(_p, refresh) {
       setLang(l); S.profile.language = l;
       try { await must(sb.from('profiles').update({ language: l }).eq('user_id', S.user.id)); } catch (e) { console.error(e); }
       go(); } }, n))),
+    h('div', { class: 'sec' }, t('App')),
+    installCard(refresh, { always: true }),
+    h('div', { class: 'card' }, h('div', { class: 'row between' },
+      h('div', { class: 'grow' }, h('b', null, t('Help improve Vivaham')), h('div', { class: 'mute' }, t('Share how you use the app (screens and taps). Never what you type.'))),
+      h('button', { class: 'chip' + (consent() !== 'no' ? ' on' : ''), onclick: () => { const on = consent() === 'no'; if (!on) capture('stats_off'); setConsent(on); refresh(); } }, consent() !== 'no' ? t('Yes') : t('No'))),
+      h('button', { class: 'link', style: 'padding-left:0', onclick: () => (location.hash = '#/privacy') }, t('Privacy notice'))),
     h('button', { class: 'btn ghost', style: 'margin-top:24px', onclick: async () => { await sb.auth.signOut(); location.hash = '#/login'; go(); } }, t('Log out')));
 }
